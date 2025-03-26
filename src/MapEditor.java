@@ -11,6 +11,7 @@ public class MapEditor extends JFrame {
     private boolean spawnPointSet = false;
     private int spawnX = -1, spawnY = -1;
     private boolean spawnPointBrushActive = false; // Track if spawn point brush is active
+    private boolean trapBrushActive = false; // Track if trap brush is active
 
     public MapEditor(Map map, Game game) {
         this.map = map;
@@ -34,6 +35,13 @@ public class MapEditor extends JFrame {
             spawnPointButton.setText(spawnPointBrushActive ? "Brush: ON" : "Brush: OFF");
         });
         buttonPanel.add(spawnPointButton);
+
+        JButton trapButton = new JButton("Trap Brush");
+        trapButton.addActionListener(e -> {
+            trapBrushActive = !trapBrushActive;
+            trapButton.setText(trapBrushActive ? "Trap Brush: ON" : "Trap Brush: OFF");
+        });
+        buttonPanel.add(trapButton);
 
         JButton exitButton = new JButton("Exit");
         exitButton.addActionListener(e -> dispose());
@@ -102,6 +110,7 @@ public class MapEditor extends JFrame {
         private final int tileSize = 30;
         private boolean isDragging = false; // Track if the mouse is being dragged
         private boolean isErasing = false; // Track if the right mouse button is used
+        private Image wallTexture = new ImageIcon("/Users/dynxsy/Rays_2d_SoftDev-1/textures/wall_stone.jpg").getImage();
 
         public MapPanel() {
             addMouseListener(new MouseAdapter() {
@@ -124,6 +133,8 @@ public class MapEditor extends JFrame {
                             }
                             repaint();
                         }
+                    } else if (trapBrushActive) {
+                        paintTile(x, y, 'T'); // Paint trap
                     } else if (SwingUtilities.isLeftMouseButton(e)) {
                         isDragging = true;
                         isErasing = false;
@@ -173,9 +184,10 @@ public class MapEditor extends JFrame {
             for (int y = 0; y < map.getHeight(); y++) {
                 for (int x = 0; x < map.getWidth(); x++) {
                     if (map.getTile(x, y) == '1') {
-                        g.setColor(Color.DARK_GRAY); // Wall
+                        g.drawImage(wallTexture, x * tileSize, y * tileSize, tileSize, tileSize, this);
                     } else if (map.getTile(x, y) == 'S') {
-                        g.setColor(Color.GREEN); // Spawn point tile
+                    } else if (map.getTile(x, y) == 'T') {
+                        g.setColor(Color.RED); // Trap tile
                     } else {
                         g.setColor(Color.LIGHT_GRAY); // Empty space
                     }

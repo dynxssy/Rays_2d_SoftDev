@@ -26,6 +26,7 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
     private int fov = 60; // Default FOV
     private double mouseSensitivity = 0.001; // Default mouse sensitivity
     private int rayResolution = 1; // Default ray resolution
+    private int targetFOV = 60; // Target FOV
 
     public Game() {
         String[] options = {"Create New Level", "Load Existing Level"};
@@ -145,6 +146,12 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
 
             processInput();
             player.update(map);
+            if (map.getTile((int) player.getX(), (int) player.getY()) == 'T') {
+                targetFOV = 120;
+            } else {
+                targetFOV = 60;
+            }
+            smoothFOVTransition();
             render();
             recenterMouse(); // Recenter the mouse after each frame
         }
@@ -289,6 +296,15 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
         // Logic to return to map selection menu
         JOptionPane.showMessageDialog(null, "Returning to map selection...");
         System.exit(0); // Placeholder for actual implementation
+    }
+
+    private void smoothFOVTransition() {
+        if (fov < targetFOV) {
+            fov++;
+        } else if (fov > targetFOV) {
+            fov--;
+        }
+        renderer.updateFOV(fov);
     }
 
     @Override
