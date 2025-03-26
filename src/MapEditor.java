@@ -111,7 +111,7 @@ public class MapEditor extends JFrame {
                     int y = e.getY() / tileSize;
 
                     if (spawnPointBrushActive) {
-                        if (map.getTile(x, y) == '0') { // Only allow setting spawn point on empty tiles
+                        if (map.getTile(x, y) != '1') { // Allow setting spawn point on any non-wall tile
                             if (spawnPointSet) {
                                 map.getMapLayout()[spawnY][spawnX] = '0'; // Clear previous spawn point
                             }

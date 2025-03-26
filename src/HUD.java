@@ -34,7 +34,7 @@ public class HUD implements KeyListener, MouseListener {
             // Display player position
             g.drawString("Position: (" + player.getX() + ", " + player.getY() + ")", 10, 20);
             // Display player direction
-            g.drawString("Dots rendered: " + game.dots, 10, 40);
+            g.drawString("Dots rendered [minimap Lidar]: " + game.dots, 10, 40);
 
             renderFPS(g, fps); // Render FPS
         }

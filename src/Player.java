@@ -69,11 +69,11 @@ public class Player {
     }
 
     public double getX() {
-        return x;
+        return Math.round(x * 100.0) / 100.0;
     }
 
     public double getY() {
-        return y;
+        return Math.round(y * 100.0) / 100.0;
     }
 
     public double getAngle() {

@@ -62,7 +62,7 @@ public class Raycaster {
             double distance = 0;
 
             while (true) {
-                distance += 0.005; // Increment distance for each step
+                distance += 0.001; // Increment distance for each step
                 int testX = (int) (playerX + rayX * distance);
                 int testY = (int) (playerY + rayY * distance);
 
