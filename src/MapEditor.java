@@ -16,8 +16,9 @@ public class MapEditor extends JFrame {
     public MapEditor(Map map, Game game) {
         this.map = map;
         this.game = game; // Allow null for standalone editing
+        initializeBoundaryWalls(); // Add boundary walls
         setTitle("Map Editor");
-        setSize(600, 600);
+        setSize(600, 670);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout());
 
@@ -52,6 +53,16 @@ public class MapEditor extends JFrame {
 
     public MapEditor(Map map) {
         this(map, null); // Overloaded constructor for standalone editing
+    }
+
+    private void initializeBoundaryWalls() {
+        for (int y = 0; y < map.getHeight(); y++) {
+            for (int x = 0; x < map.getWidth(); x++) {
+                if (y == 0 || y == map.getHeight() - 1 || x == 0 || x == map.getWidth() - 1) {
+                    map.getMapLayout()[y][x] = '1'; // Set boundary walls as regular walls
+                }
+            }
+        }
     }
 
     private void saveLevel() {
@@ -120,7 +131,8 @@ public class MapEditor extends JFrame {
                     int y = e.getY() / tileSize;
 
                     if (spawnPointBrushActive) {
-                        if (map.getTile(x, y) != '1') { // Allow setting spawn point on any non-wall tile
+                         // Deactivate trap brush when spawn point is set
+                        if (map.getTile(x, y) != '1' && map.getTile(x, y) != '#') { // Allow setting spawn point on any non-wall tile
                             if (spawnPointSet) {
                                 map.getMapLayout()[spawnY][spawnX] = '0'; // Clear previous spawn point
                             }
@@ -134,6 +146,7 @@ public class MapEditor extends JFrame {
                             repaint();
                         }
                     } else if (trapBrushActive) {
+                         // Deactivate spawn point brush when trap is set
                         paintTile(x, y, 'T'); // Paint trap
                     } else if (SwingUtilities.isLeftMouseButton(e)) {
                         isDragging = true;
@@ -171,6 +184,9 @@ public class MapEditor extends JFrame {
 
         private void paintTile(int x, int y, char tileType) {
             if (x >= 0 && x < map.getWidth() && y >= 0 && y < map.getHeight()) {
+                if ((y == 0 || y == map.getHeight() - 1 || x == 0 || x == map.getWidth() - 1)) {
+                    return; // Prevent editing boundary walls
+                }
                 if (map.getTile(x, y) != tileType) {
                     map.getMapLayout()[y][x] = tileType;
                     repaint();
@@ -183,7 +199,10 @@ public class MapEditor extends JFrame {
             super.paintComponent(g);
             for (int y = 0; y < map.getHeight(); y++) {
                 for (int x = 0; x < map.getWidth(); x++) {
-                    if (map.getTile(x, y) == '1') {
+                    if (map.getTile(x, y) == '#') {
+                        g.setColor(Color.DARK_GRAY); // Boundary wall color
+                        g.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+                    } else if (map.getTile(x, y) == '1') {
                         g.drawImage(wallTexture, x * tileSize, y * tileSize, tileSize, tileSize, this);
                     } else if (map.getTile(x, y) == 'S') {
                         g.setColor(Color.GREEN); // Spawn point tile

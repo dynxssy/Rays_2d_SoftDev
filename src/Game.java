@@ -55,7 +55,7 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
             if (editor.isSpawnPointSet()) {
                 player = new Player(editor.getSpawnX() + 0.5, editor.getSpawnY() + 0.5, 0); // Use the spawn point set in the editor
             } else {
-                player = new Player(1.5, 1.5, 0); // Default spawn point if none is set
+                player = new Player(10.5, 10.5, 0); // Default spawn point if none is set
             }
         } else if (choice == 1) {
             if (!loadLevel()) {
@@ -146,7 +146,9 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
 
             processInput();
             player.update(map);
-            if (map.getTile((int) player.getX(), (int) player.getY()) == 'T') {
+            if ((int) player.getX() >= 0 && (int) player.getX() < map.getWidth() &&
+                (int) player.getY() >= 0 && (int) player.getY() < map.getHeight() &&
+                map.getTile((int) player.getX(), (int) player.getY()) == 'T') {
                 targetFOV = 120;
             } else {
                 targetFOV = 60;
@@ -189,7 +191,7 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
     }
 
     private void renderMiniMap(Graphics g) {
-        int miniMapSize = Math.min(getWidth(), getHeight()) / 5; // Mini-map size is 1/5th of the smaller screen dimension
+        int miniMapSize = Math.min(getWidth(), getHeight()) / 4; // Mini-map size is 1/5th of the smaller screen dimension
         int tileSize = miniMapSize / map.getWidth(); // Size of each tile on the mini-map
         int offsetX = (getWidth() - miniMapSize) / 2; // Center the mini-map horizontally
         int offsetY = getHeight() - miniMapSize - 10; // Position the mini-map 10px above the bottom edge
@@ -198,22 +200,26 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
         for (int y = 0; y < map.getHeight(); y++) {
             for (int x = 0; x < map.getWidth(); x++) {
                 if (map.isWall(x, y)) {
-                    //g.setColor(Color.DARK_GRAY); // Wall color
+                    //g.setColor(Color.DARK_GRAY); // wall invisible to be revealed with fov rays
+                } else if (map.getTile(x, y) == 'S') {
+                    g.setColor(Color.GREEN); // Spawn point color
+                } else if (map.getTile(x, y) == 'T') {
+                    g.setColor(Color.RED); // Trap color
                 } else {
-                    g.setColor(Color.LIGHT_GRAY); // Floor color
+                    g.setColor(Color.LIGHT_GRAY); // Empty space color
                 }
                 g.fillRect(offsetX + x * tileSize, offsetY + y * tileSize, tileSize, tileSize);
             }
         }
 
         // Draw the player
-        int playerX = (int) (offsetX + player.getX() * tileSize);
-        int playerY = (int) (offsetY + player.getY() * tileSize);
+        int playerX = (int) (offsetX + Math.max(0, Math.min(player.getX(), map.getWidth() - 1)) * tileSize);
+        int playerY = (int) (offsetY + Math.max(0, Math.min(player.getY(), map.getHeight() - 1)) * tileSize);
         g.setColor(Color.RED);
         g.fillOval(playerX - 3, playerY - 3, 6, 6); // Player marker
 
         // Draw the field of view (FOV) rays
-        g.setColor(Color.YELLOW);
+        g.setColor(Color.BLACK);; // Set color with 50% transparency (alpha = 128)
         for (int i = -30; i <= 30; i++) { // Cast rays within FOV (-30 to +30 degrees)
             double rayAngle = player.getAngle() + Math.toRadians(i);
             double rayX = Math.cos(rayAngle);
@@ -225,7 +231,8 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
                 int testX = (int) (player.getX() + rayX * distance);
                 int testY = (int) (player.getY() + rayY * distance);
 
-                if (testX < 0 || testX >= map.getWidth() || testY < 0 || testY >= map.getHeight() || map.isWall(testX, testY)) {
+                if (testX < 0 || testX >= map.getWidth() || testY < 0 || testY >= map.getHeight() ||
+                    (testX >= 0 && testX < map.getWidth() && testY >= 0 && testY < map.getHeight() && map.isWall(testX, testY))) {
                     // Stop the ray at the wall or boundary
                     int rayEndX = (int) (offsetX + (player.getX() + rayX * distance) * tileSize);
                     int rayEndY = (int) (offsetY + (player.getY() + rayY * distance) * tileSize);
@@ -246,8 +253,6 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
         g.setColor(Color.BLACK);
         for (Point point : rayEndPoints) {
             g.fillOval(point.x - 1, point.y - 1, 2, 2); // Draw a small black dot
-            
-
         }
     }
 

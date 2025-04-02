@@ -46,6 +46,9 @@ public class Map {
     }
 
     public char getTile(int x, int y) {
+        if (x < 0 || x >= width || y < 0 || y >= height) {
+            return '1'; // Treat out-of-bounds as walls
+        }
         return mapLayout[y][x];
     }
 }
