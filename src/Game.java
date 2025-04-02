@@ -245,7 +245,7 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
         // Render all stored ray end points
         g.setColor(Color.BLACK);
         for (Point point : rayEndPoints) {
-            g.fillOval(point.x - 2, point.y - 2, 4, 4); // Draw a small black dot
+            g.fillOval(point.x - 1, point.y - 1, 2, 2); // Draw a small black dot
             
 
         }

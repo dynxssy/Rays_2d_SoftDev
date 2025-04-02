@@ -186,19 +186,26 @@ public class MapEditor extends JFrame {
                     if (map.getTile(x, y) == '1') {
                         g.drawImage(wallTexture, x * tileSize, y * tileSize, tileSize, tileSize, this);
                     } else if (map.getTile(x, y) == 'S') {
+                        g.setColor(Color.GREEN); // Spawn point tile
+                        g.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
                     } else if (map.getTile(x, y) == 'T') {
                         g.setColor(Color.RED); // Trap tile
+                        g.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
                     } else {
                         g.setColor(Color.LIGHT_GRAY); // Empty space
+                        g.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
                     }
-                    g.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
 
                     if (spawnPointSet && x == spawnX && y == spawnY) {
-                        g.setColor(Color.RED); // Spawn point marker
-                        g.fillOval(x * tileSize + tileSize / 4, y * tileSize + tileSize / 4, tileSize / 2, tileSize / 2);
+                        g.setColor(Color.GREEN); // Spawn point
+                        g.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+                        g.setColor(Color.BLACK);
+                        g.drawString("S", x * tileSize + tileSize / 2 - 5, y * tileSize + tileSize / 2 + 5); // Draw 'S' for spawn point
+                       
+                        
                     }
-
-                    g.setColor(Color.BLACK); // Grid lines
+                    else
+                    g.setColor(Color.GRAY); // Grid lines
                     g.drawRect(x * tileSize, y * tileSize, tileSize, tileSize);
                 }
             }

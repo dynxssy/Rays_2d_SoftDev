@@ -29,11 +29,7 @@ public class Raycaster {
         this.screenHeight = screenHeight;
         this.fov = fov;
         this.rayResolution = rayResolution;
-        try {
-            wallTexture = ImageIO.read(new File("assets/wall.png")); // Add your texture path
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        
     }
 
     public BufferedImage castRays() {
