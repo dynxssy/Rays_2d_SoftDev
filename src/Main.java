@@ -8,6 +8,8 @@ public class Main {
 
     public static void main(String[] args) {
         JFrame frame = new JFrame("Java Raycaster Game");
+        TextureLoader.loadTextures();
+
         Game game = new Game();
         
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
