@@ -29,6 +29,13 @@ public class Raycaster {
         this.screenHeight = screenHeight;
         this.fov = fov;
         this.rayResolution = rayResolution;
+
+        try {
+            wallTexture = ImageIO.read(new File("Rays_2d_SoftDev-main/textures/brick.jpg"));
+        } catch (IOException e) {
+            System.out.println("Failed to load wall texture.");
+            e.printStackTrace();
+        }
         
     }
 
@@ -36,55 +43,65 @@ public class Raycaster {
         BufferedImage image = new BufferedImage(screenWidth, screenHeight, BufferedImage.TYPE_INT_RGB);
         Graphics g = image.getGraphics();
 
-        // Render ceiling gradient
+        // 🟦 Render ceiling gradient
         for (int y = 0; y < screenHeight / 2; y++) {
-            int shade = (int) (255 - (255.0 * y / (screenHeight / 2))); // Lighter at the top, darker toward the middle
+            int shade = (int) (255 - (255.0 * y / (screenHeight / 2)));
             g.setColor(new Color(shade, shade, shade));
             g.drawLine(0, y, screenWidth, y);
         }
 
-        // Render floor gradient
+        // 🟫 Render floor gradient
         for (int y = screenHeight / 2; y < screenHeight; y++) {
-            int shade = (int) (1 + (205.0 * (y - screenHeight / 2) / (screenHeight / 2))); // Darker at the middle, lighter toward the bottom
+            int shade = (int) (1 + (205.0 * (y - screenHeight / 2) / (screenHeight / 2)));
             g.setColor(new Color(shade, shade, shade));
             g.drawLine(0, y, screenWidth, y);
         }
 
-        // Fix raycasting loop to cover the entire screen width
-        for (int x = 0; x < screenWidth; x++) { // Iterate over the screen width
-            double rayAngle = playerAngle - Math.toRadians(fov / 2) + Math.toRadians(fov) * x / screenWidth; // Adjust ray angle for full screen
+        // 🎯 Raycasting for wall rendering
+        for (int x = 0; x < screenWidth; x++) {
+            double rayAngle = playerAngle - Math.toRadians(fov / 2) + Math.toRadians(fov) * x / screenWidth;
             double rayX = Math.cos(rayAngle);
             double rayY = Math.sin(rayAngle);
             double distance = 0;
 
             while (true) {
-                distance += 0.001; // Increment distance for each step
+                distance += 0.001;
                 int testX = (int) (playerX + rayX * distance);
                 int testY = (int) (playerY + rayY * distance);
 
                 if (testX < 0 || testX >= mapWidth || testY < 0 || testY >= mapHeight) {
                     break;
                 }
-                if (map[testY][testX] > 0) {
-                    // Apply cosine correction to the distance
-                    double correctedDistance = distance * Math.cos(rayAngle - playerAngle);
 
+                if (map[testY][testX] > 0) {
+                    double correctedDistance = distance * Math.cos(rayAngle - playerAngle);
                     int wallHeight = (int) (screenHeight / correctedDistance);
                     int drawStart = (screenHeight / 2) - (wallHeight / 2);
                     int drawEnd = drawStart + wallHeight;
 
                     if (wallTexture != null) {
-                        int textureX = (int) ((playerX + rayX * distance) % wallTexture.getWidth());
+                        // ✅ Get correct texture X coordinate
+                        double hitX = playerX + rayX * distance;
+                        double hitY = playerY + rayY * distance;
+
+                        double wallX;
+                        if (Math.abs(rayX) > Math.abs(rayY)) {
+                            wallX = hitY - Math.floor(hitY);
+                        } else {
+                            wallX = hitX - Math.floor(hitX);
+                        }
+
+                        int textureX = (int) (wallX * wallTexture.getWidth());
+
                         for (int drawY = drawStart; drawY < drawEnd; drawY++) {
                             int textureY = (int) ((drawY - drawStart) * wallTexture.getHeight() / wallHeight);
                             int color = wallTexture.getRGB(textureX, textureY);
-                            image.setRGB(x, drawY, color); // Use `x` directly for full screen rendering
+                            image.setRGB(x, drawY, color);
                         }
                     } else {
-                        // Calculate color based on distance (closer = lighter, farther = darker)
-                        int shade = (int) Math.max(16, 255 - correctedDistance * 40); // Adjust multiplier for effect
+                        int shade = (int) Math.max(16, 255 - correctedDistance * 40);
                         g.setColor(new Color(shade, shade, shade));
-                        g.fillRect(x, drawStart, 1, wallHeight); // Use `x` directly for full screen rendering
+                        g.fillRect(x, drawStart, 1, wallHeight);
                     }
                     break;
                 }
