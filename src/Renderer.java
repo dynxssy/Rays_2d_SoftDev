@@ -1,4 +1,3 @@
-import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
@@ -26,29 +25,19 @@ public class Renderer {
 
     public void render(Graphics g) {
         Raycaster raycaster = new Raycaster(
-            convertMapToIntArray(map.getMapLayout()), 
-            map.getWidth(), 
-            map.getHeight(), 
-            player.getX(), 
-            player.getY(), 
-            player.getAngle(), 
-            game.getWidth(), 
-            game.getHeight(),
-            fov, // Pass updated FOV
-            rayResolution // Pass updated ray resolution
+                map.getMapLayout(),     //  pass char[][] directly
+                map.getWidth(),
+                map.getHeight(),
+                player.getX(),
+                player.getY(),
+                player.getAngle(),
+                game.getWidth(),
+                game.getHeight(),
+                fov,
+                rayResolution
         );
 
         BufferedImage image = raycaster.castRays();
         g.drawImage(image, 0, 0, null);
-    }
-
-    private int[][] convertMapToIntArray(char[][] charMap) {
-        int[][] intMap = new int[charMap.length][charMap[0].length];
-        for (int y = 0; y < charMap.length; y++) {
-            for (int x = 0; x < charMap[y].length; x++) {
-                intMap[y][x] = (charMap[y][x] == '1') ? 1 : 0; // Convert '1' to 1 (wall), others to 0
-            }
-        }
-        return intMap;
     }
 }
