@@ -1,5 +1,4 @@
 import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
@@ -8,7 +7,7 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 
 public class Raycaster {
-    private int[][] map;
+    private char[][] map;
     private int mapWidth;
     private int mapHeight;
     private double playerX;
@@ -21,7 +20,8 @@ public class Raycaster {
     private int rayResolution;
     private BufferedImage image;
 
-    public Raycaster(int[][] map, int mapWidth, int mapHeight, double playerX, double playerY, double playerAngle, int screenWidth, int screenHeight, int fov, int rayResolution) {
+    public Raycaster(char[][] map, int mapWidth, int mapHeight, double playerX, double playerY, double playerAngle,
+                     int screenWidth, int screenHeight, int fov, int rayResolution) {
         this.map = map;
         this.mapWidth = mapWidth;
         this.mapHeight = mapHeight;
@@ -34,7 +34,7 @@ public class Raycaster {
         this.rayResolution = rayResolution;
 
         try {
-            wallTexture = ImageIO.read(new File("textures/brick4200x.jpg")); // 128x128 recommended
+            wallTexture = ImageIO.read(new File("textures/brick4200x.jpg"));
             System.out.println("✅ Texture loaded.");
         } catch (IOException e) {
             System.out.println("❌ Failed to load wall texture.");
@@ -48,37 +48,23 @@ public class Raycaster {
         Graphics2D g = (Graphics2D) image.getGraphics();
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 
-        // Ceiling
-        for (int y = 0; y < screenHeight / 2; y++) {
-            int shade = (int) (255 - (255.0 * y / (screenHeight / 2)));
-            g.setColor(new Color(shade, shade, shade));
-            g.drawLine(0, y, screenWidth, y);
-        }
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 0, screenWidth, screenHeight);
 
-        // Floor
-        for (int y = screenHeight / 2; y < screenHeight; y++) {
-            int shade = (int) (1 + (205.0 * (y - screenHeight / 2) / (screenHeight / 2)));
-            g.setColor(new Color(shade, shade, shade));
-            g.drawLine(0, y, screenWidth, y);
-        }
-
-        // Raycasting
         for (int x = 0; x < screenWidth; x++) {
             double rayAngle = playerAngle - Math.toRadians(fov / 2) + Math.toRadians(fov) * x / screenWidth;
             double rayX = Math.cos(rayAngle);
             double rayY = Math.sin(rayAngle);
-            double distance = 0;
 
-            // DDA Algorithm for raycasting
             double sideDistX, sideDistY;
             double deltaDistX = (rayX == 0) ? 1e30 : Math.abs(1 / rayX);
             double deltaDistY = (rayY == 0) ? 1e30 : Math.abs(1 / rayY);
 
             int stepX, stepY;
-            boolean hit = false;
-            int side = 0; // 0 = x-axis, 1 = y-axis
             int mapX = (int) playerX;
             int mapY = (int) playerY;
+            int side = 0;
+            boolean hit = false;
 
             if (rayX < 0) {
                 stepX = -1;
@@ -97,55 +83,41 @@ public class Raycaster {
             }
 
             while (!hit) {
-                // Step in the x-direction or y-direction
                 if (sideDistX < sideDistY) {
                     sideDistX += deltaDistX;
                     mapX += stepX;
-                    side = 0; // x-side hit
+                    side = 0;
                 } else {
                     sideDistY += deltaDistY;
                     mapY += stepY;
-                    side = 1; // y-side hit
+                    side = 1;
                 }
 
-                if (mapX < 0 || mapX >= mapWidth || mapY < 0 || mapY >= mapHeight || map[mapY][mapX] > 0) {
+                if (mapX < 0 || mapX >= mapWidth || mapY < 0 || mapY >= mapHeight || map[mapY][mapX] == '1') {
                     hit = true;
                 }
             }
 
-            // Calculate the perpendicular wall distance
-            double correctedDistance = (side == 0) ? (mapX - playerX + (1 - stepX) / 2) / rayX : (mapY - playerY + (1 - stepY) / 2) / rayY;
+            double correctedDistance = (side == 0)
+                    ? (mapX - playerX + (1 - stepX) / 2) / rayX
+                    : (mapY - playerY + (1 - stepY) / 2) / rayY;
 
             if (correctedDistance < 0.0001) correctedDistance = 0.0001;
 
             double wallHeight = screenHeight / correctedDistance;
             int drawStart = (int) (screenHeight / 2 - wallHeight / 2);
             int drawEnd = (int) (screenHeight / 2 + wallHeight / 2);
-
             drawStart = Math.max(0, drawStart);
             drawEnd = Math.min(screenHeight, drawEnd);
 
-            // Correct texture mapping based on side hit
-            double wallX;
-            boolean isVerticalHit = (side == 0);
-            if (side == 0) {
-                wallX = playerY + correctedDistance * rayY;
-            } else {
-                wallX = playerX + correctedDistance * rayX;
-            }
-            wallX -= Math.floor(wallX); // Wall position in texture coordinates
+            double wallX = (side == 0)
+                    ? playerY + correctedDistance * rayY
+                    : playerX + correctedDistance * rayX;
+            wallX -= Math.floor(wallX);
 
             int textureX = (int) (wallX * wallTexture.getWidth());
-            if (isVerticalHit && rayX > 0) {
-                textureX = wallTexture.getWidth() - textureX - 1;
-            }
-            if (!isVerticalHit && rayY < 0) {
-                textureX = wallTexture.getWidth() - textureX - 1;
-            }
-
             textureX = Math.max(0, Math.min(textureX, wallTexture.getWidth() - 1));
 
-            // Render the texture on the wall
             for (int drawY = drawStart; drawY < drawEnd; drawY++) {
                 double sampleRatio = (drawY - drawStart) / wallHeight;
                 int textureY = (int) (sampleRatio * wallTexture.getHeight());
@@ -153,14 +125,38 @@ public class Raycaster {
 
                 try {
                     int color = wallTexture.getRGB(textureX, textureY);
-                    if (x >= 0 && x < screenWidth && drawY >= 0 && drawY < screenHeight) {
-                        image.setRGB(x, drawY, color); // Apply texture color to the wall
-                    }
+                    image.setRGB(x, drawY, color);
                 } catch (Exception e) {
-                    if (x >= 0 && x < screenWidth && drawY >= 0 && drawY < screenHeight) {
-                        image.setRGB(x, drawY, new Color(255, 0, 0).getRGB()); // Fallback color
+                    image.setRGB(x, drawY, new Color(255, 0, 0).getRGB());
+                }
+            }
+
+            // Dynamic floor coloring
+            for (int y = drawEnd; y < screenHeight; y++) {
+                double floorDist = screenHeight / (2.0 * y - screenHeight);
+                double floorX = playerX + rayX * floorDist;
+                double floorY = playerY + rayY * floorDist;
+
+                int cellX = (int) floorX;
+                int cellY = (int) floorY;
+
+                Color floorColor = null;
+                if (cellX >= 0 && cellX < mapWidth && cellY >= 0 && cellY < mapHeight) {
+                    char tile = map[cellY][cellX];
+                    if (tile == 'T') {
+                        floorColor = new Color(0, 0, 255); // Blue for FOV trap
+                    } else if (tile == 'E') {
+                        floorColor = new Color(255, 0, 0); // Red for endgame trap
                     }
                 }
+
+                if (floorColor == null) {
+                    int shade = (int) (1 + (205.0 * (y - screenHeight / 2) / (screenHeight / 2)));
+                    shade = Math.max(0, Math.min(255, shade));
+                    floorColor = new Color(shade, shade, shade);
+                }
+
+                image.setRGB(x, y, floorColor.getRGB());
             }
         }
 
@@ -168,4 +164,3 @@ public class Raycaster {
         return image;
     }
 }
-
