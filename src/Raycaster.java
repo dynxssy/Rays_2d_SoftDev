@@ -1,5 +1,7 @@
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -32,7 +34,7 @@ public class Raycaster {
         this.rayResolution = rayResolution;
 
         try {
-            wallTexture = ImageIO.read(new File("Rays_2d_SoftDev-main/textures/brick.jpg")); // Use a 64x64 or 128x128 image
+            wallTexture = ImageIO.read(new File("Rays_2d_SoftDev-main/textures/brick.jpg")); // 128x128 recommended
             System.out.println("✅ Texture loaded.");
         } catch (IOException e) {
             System.out.println("❌ Failed to load wall texture.");
@@ -43,7 +45,8 @@ public class Raycaster {
     }
 
     public BufferedImage castRays() {
-        Graphics g = image.getGraphics();
+        Graphics2D g = (Graphics2D) image.getGraphics();
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 
         // Ceiling
         for (int y = 0; y < screenHeight / 2; y++) {
@@ -66,62 +69,97 @@ public class Raycaster {
             double rayY = Math.sin(rayAngle);
             double distance = 0;
 
-            while (true) {
-                distance += 0.01;
-                int testX = (int) (playerX + rayX * distance);
-                int testY = (int) (playerY + rayY * distance);
+            // DDA Algorithm for raycasting
+            double sideDistX, sideDistY;
+            double deltaDistX = (rayX == 0) ? 1e30 : Math.abs(1 / rayX);
+            double deltaDistY = (rayY == 0) ? 1e30 : Math.abs(1 / rayY);
 
-                if (testX < 0 || testX >= mapWidth || testY < 0 || testY >= mapHeight) break;
+            int stepX, stepY;
+            boolean hit = false;
+            int side = 0; // 0 = x-axis, 1 = y-axis
+            int mapX = (int) playerX;
+            int mapY = (int) playerY;
 
-                if (map[testY][testX] > 0) {
-                    double correctedDistance = distance * Math.cos(rayAngle - playerAngle);
-                    if (correctedDistance < 0.0001) correctedDistance = 0.0001;
+            if (rayX < 0) {
+                stepX = -1;
+                sideDistX = (playerX - mapX) * deltaDistX;
+            } else {
+                stepX = 1;
+                sideDistX = (mapX + 1.0 - playerX) * deltaDistX;
+            }
 
-                    int wallHeight = (int) (screenHeight / correctedDistance);
-                    int drawStart = (screenHeight / 2) - (wallHeight / 2);
-                    int drawEnd = drawStart + wallHeight;
+            if (rayY < 0) {
+                stepY = -1;
+                sideDistY = (playerY - mapY) * deltaDistY;
+            } else {
+                stepY = 1;
+                sideDistY = (mapY + 1.0 - playerY) * deltaDistY;
+            }
 
-                    // Clamp drawStart and drawEnd to screen bounds
-                    drawStart = Math.max(0, drawStart);
-                    drawEnd = Math.min(screenHeight, drawEnd);
+            while (!hit) {
+                // Step in the x-direction or y-direction
+                if (sideDistX < sideDistY) {
+                    sideDistX += deltaDistX;
+                    mapX += stepX;
+                    side = 0; // x-side hit
+                } else {
+                    sideDistY += deltaDistY;
+                    mapY += stepY;
+                    side = 1; // y-side hit
+                }
 
-                    if (wallTexture != null) {
-                        double hitX = playerX + rayX * distance;
-                        double hitY = playerY + rayY * distance;
-                        double wallX = (Math.abs(rayX) > Math.abs(rayY))
-                            ? hitY - Math.floor(hitY)
-                            : hitX - Math.floor(hitX);
+                if (mapX < 0 || mapX >= mapWidth || mapY < 0 || mapY >= mapHeight || map[mapY][mapX] > 0) {
+                    hit = true;
+                }
+            }
 
-                        int textureX = (int) (wallX * wallTexture.getWidth());
-                        textureX = Math.max(0, Math.min(textureX, wallTexture.getWidth() - 1));
+            // Calculate the perpendicular wall distance
+            double correctedDistance = (side == 0) ? (mapX - playerX + (1 - stepX) / 2) / rayX : (mapY - playerY + (1 - stepY) / 2) / rayY;
 
-                        for (int drawY = drawStart; drawY < drawEnd; drawY++) {
-                            if (wallHeight <= 0) continue;
+            if (correctedDistance < 0.0001) correctedDistance = 0.0001;
 
-                            int textureY = (int) (((double)(drawY - drawStart) / wallHeight) * wallTexture.getHeight());
-                            textureY = Math.max(0, Math.min(textureY, wallTexture.getHeight() - 1));
+            double wallHeight = screenHeight / correctedDistance;
+            int drawStart = (int) (screenHeight / 2 - wallHeight / 2);
+            int drawEnd = (int) (screenHeight / 2 + wallHeight / 2);
 
-                            try {
-                                int color = wallTexture.getRGB(textureX, textureY);
+            drawStart = Math.max(0, drawStart);
+            drawEnd = Math.min(screenHeight, drawEnd);
 
-                                // ✅ Protect from crash here
-                                if (x >= 0 && x < screenWidth && drawY >= 0 && drawY < screenHeight) {
-                                    image.setRGB(x, drawY, color);
-                                }
-                            } catch (Exception e) {
-                                // fallback red
-                                if (x >= 0 && x < screenWidth && drawY >= 0 && drawY < screenHeight) {
-                                    image.setRGB(x, drawY, new Color(255, 0, 0).getRGB());
-                                }
-                            }
-                        }
-                    } else {
-                        int shade = (int) Math.max(16, 255 - correctedDistance * 40);
-                        g.setColor(new Color(shade, shade, shade));
-                        g.fillRect(x, drawStart, 1, wallHeight);
+            // Correct texture mapping based on side hit
+            double wallX;
+            boolean isVerticalHit = (side == 0);
+            if (side == 0) {
+                wallX = playerY + correctedDistance * rayY;
+            } else {
+                wallX = playerX + correctedDistance * rayX;
+            }
+            wallX -= Math.floor(wallX); // Wall position in texture coordinates
+
+            int textureX = (int) (wallX * wallTexture.getWidth());
+            if (isVerticalHit && rayX > 0) {
+                textureX = wallTexture.getWidth() - textureX - 1;
+            }
+            if (!isVerticalHit && rayY < 0) {
+                textureX = wallTexture.getWidth() - textureX - 1;
+            }
+
+            textureX = Math.max(0, Math.min(textureX, wallTexture.getWidth() - 1));
+
+            // Render the texture on the wall
+            for (int drawY = drawStart; drawY < drawEnd; drawY++) {
+                double sampleRatio = (drawY - drawStart) / wallHeight;
+                int textureY = (int) (sampleRatio * wallTexture.getHeight());
+                textureY = Math.max(0, Math.min(textureY, wallTexture.getHeight() - 1));
+
+                try {
+                    int color = wallTexture.getRGB(textureX, textureY);
+                    if (x >= 0 && x < screenWidth && drawY >= 0 && drawY < screenHeight) {
+                        image.setRGB(x, drawY, color); // Apply texture color to the wall
                     }
-
-                    break;
+                } catch (Exception e) {
+                    if (x >= 0 && x < screenWidth && drawY >= 0 && drawY < screenHeight) {
+                        image.setRGB(x, drawY, new Color(255, 0, 0).getRGB()); // Fallback color
+                    }
                 }
             }
         }
