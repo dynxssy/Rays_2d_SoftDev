@@ -34,7 +34,7 @@ public class Raycaster {
         this.rayResolution = rayResolution;
 
         try {
-            wallTexture = ImageIO.read(new File("Rays_2d_SoftDev-main/textures/brick.jpg")); // 128x128 recommended
+            wallTexture = ImageIO.read(new File("Rays_2d_SoftDev-main/textures/brick4200x.jpg")); // 128x128 recommended
             System.out.println("✅ Texture loaded.");
         } catch (IOException e) {
             System.out.println("❌ Failed to load wall texture.");
