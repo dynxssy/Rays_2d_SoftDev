@@ -146,11 +146,20 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
 
             processInput();
             player.update(map);
-            if (map.getTile((int) player.getX(), (int) player.getY()) == 'T') {
+
+            char currentTile = map.getTile((int) player.getX(), (int) player.getY());
+
+            if (currentTile == 'T') {
                 targetFOV = 120;
             } else {
                 targetFOV = 60;
             }
+
+            if (currentTile == 'E') {
+                JOptionPane.showMessageDialog(null, "You stepped on the ENDGAME trap!");
+                System.exit(0);
+            }
+
             smoothFOVTransition();
             render();
             recenterMouse(); // Recenter the mouse after each frame
@@ -197,8 +206,13 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
         // Draw the map
         for (int y = 0; y < map.getHeight(); y++) {
             for (int x = 0; x < map.getWidth(); x++) {
+                char tile = map.getTile(x, y);
                 if (map.isWall(x, y)) {
-                    //g.setColor(Color.DARK_GRAY); // Wall color
+                    // Wall (optional color)
+                } else if (tile == 'T') {
+                    g.setColor(Color.BLUE);
+                } else if (tile == 'E') {
+                    g.setColor(Color.RED);
                 } else {
                     g.setColor(Color.LIGHT_GRAY); // Floor color
                 }

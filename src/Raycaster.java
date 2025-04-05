@@ -1,4 +1,5 @@
 import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
@@ -110,11 +111,13 @@ public class Raycaster {
             drawStart = Math.max(0, drawStart);
             drawEnd = Math.min(screenHeight, drawEnd);
 
-            double wallX = (side == 0)
-                    ? playerY + correctedDistance * rayY
-                    : playerX + correctedDistance * rayX;
+            double wallX;
+            if (side == 0) {
+                wallX = playerY + correctedDistance * rayY;
+            } else {
+                wallX = playerX + correctedDistance * rayX;
+            }
             wallX -= Math.floor(wallX);
-
             int textureX = (int) (wallX * wallTexture.getWidth());
             textureX = Math.max(0, Math.min(textureX, wallTexture.getWidth() - 1));
 
