@@ -10,12 +10,13 @@ public class MapEditor extends JFrame {
     private Game game;
     private boolean spawnPointSet = false;
     private int spawnX = -1, spawnY = -1;
-    private boolean spawnPointBrushActive = false; // Track if spawn point brush is active
-    private boolean trapBrushActive = false; // Track if trap brush is active
+    private boolean spawnPointBrushActive = false;
+    private boolean trapBrushActive = false;
+    private boolean endgameTrapBrushActive = false;
 
     public MapEditor(Map map, Game game) {
         this.map = map;
-        this.game = game; // Allow null for standalone editing
+        this.game = game;
         setTitle("Map Editor");
         setSize(600, 600);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -25,6 +26,7 @@ public class MapEditor extends JFrame {
         add(mapPanel, BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel();
+
         JButton saveButton = new JButton("Save Level");
         saveButton.addActionListener(e -> saveLevel());
         buttonPanel.add(saveButton);
@@ -32,16 +34,29 @@ public class MapEditor extends JFrame {
         JButton spawnPointButton = new JButton("Spawn Point Brush");
         spawnPointButton.addActionListener(e -> {
             spawnPointBrushActive = !spawnPointBrushActive; // Toggle the brush mode
+            trapBrushActive = false;
+            endgameTrapBrushActive = false;
             spawnPointButton.setText(spawnPointBrushActive ? "Brush: ON" : "Brush: OFF");
         });
         buttonPanel.add(spawnPointButton);
 
-        JButton trapButton = new JButton("Trap Brush");
+        JButton trapButton = new JButton("FOV Trap Brush");
         trapButton.addActionListener(e -> {
             trapBrushActive = !trapBrushActive;
-            trapButton.setText(trapBrushActive ? "Trap Brush: ON" : "Trap Brush: OFF");
+            spawnPointBrushActive = false;
+            endgameTrapBrushActive = false;
+            trapButton.setText(trapBrushActive ? "Brush: ON" : "Brush: OFF");
         });
         buttonPanel.add(trapButton);
+
+        JButton endgameTrapButton = new JButton("Endgame Trap Brush");
+        endgameTrapButton.addActionListener(e -> {
+            endgameTrapBrushActive = !endgameTrapBrushActive;
+            trapBrushActive = false;
+            spawnPointBrushActive = false;
+            endgameTrapButton.setText(endgameTrapBrushActive ? "Brush: ON" : "Brush: OFF");
+        });
+        buttonPanel.add(endgameTrapButton);
 
         JButton exitButton = new JButton("Exit");
         exitButton.addActionListener(e -> dispose());
@@ -135,6 +150,8 @@ public class MapEditor extends JFrame {
                         }
                     } else if (trapBrushActive) {
                         paintTile(x, y, 'T'); // Paint trap
+                    } else if (endgameTrapBrushActive) {
+                        paintTile(x, y, 'E');
                     } else if (SwingUtilities.isLeftMouseButton(e)) {
                         isDragging = true;
                         isErasing = false;
@@ -183,29 +200,21 @@ public class MapEditor extends JFrame {
             super.paintComponent(g);
             for (int y = 0; y < map.getHeight(); y++) {
                 for (int x = 0; x < map.getWidth(); x++) {
-                    if (map.getTile(x, y) == '1') {
-                        g.drawImage(wallTexture, x * tileSize, y * tileSize, tileSize, tileSize, this);
-                    } else if (map.getTile(x, y) == 'S') {
-                        g.setColor(Color.GREEN); // Spawn point tile
-                        g.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
-                    } else if (map.getTile(x, y) == 'T') {
-                        g.setColor(Color.RED); // Trap tile
-                        g.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+                    char tile = map.getTile(x, y);
+                    if (tile == '1') {
+                        g.setColor(Color.DARK_GRAY);
+                    } else if (tile == 'S') {
+                        g.setColor(Color.GREEN);
+                    } else if (tile == 'T') {
+                        g.setColor(Color.BLUE);
+                    } else if (tile == 'E') {
+                        g.setColor(Color.RED);
                     } else {
-                        g.setColor(Color.LIGHT_GRAY); // Empty space
-                        g.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+                        g.setColor(Color.LIGHT_GRAY);
                     }
+                    g.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
 
-                    if (spawnPointSet && x == spawnX && y == spawnY) {
-                        g.setColor(Color.GREEN); // Spawn point
-                        g.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
-                        g.setColor(Color.BLACK);
-                        g.drawString("S", x * tileSize + tileSize / 2 - 5, y * tileSize + tileSize / 2 + 5); // Draw 'S' for spawn point
-                       
-                        
-                    }
-                    else
-                    g.setColor(Color.GRAY); // Grid lines
+                    g.setColor(Color.GRAY);
                     g.drawRect(x * tileSize, y * tileSize, tileSize, tileSize);
                 }
             }
