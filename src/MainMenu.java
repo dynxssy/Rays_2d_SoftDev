@@ -11,29 +11,38 @@ public class MainMenu extends JPanel {
         setLayout(new BorderLayout());
 
         // Background panel
-        JLabel background = new JLabel(new ImageIcon("src/textures/menu_background.jpg"));
+        JLabel background = new JLabel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                ImageIcon icon = new ImageIcon("textures/menu_background.jpg");
+                Image scaledImage = icon.getImage().getScaledInstance(getWidth(), getHeight(), Image.SCALE_SMOOTH);
+                g.drawImage(scaledImage, 0, 0, null);
+            }
+        };
         background.setLayout(new GridBagLayout());
         add(background, BorderLayout.CENTER);
 
         // Menu buttons
         JPanel buttonPanel = new JPanel();
         buttonPanel.setOpaque(false);
-        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
+        buttonPanel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 0, 10, 0); // Add spacing between buttons
+        gbc.gridx = 0;
+        gbc.gridy = GridBagConstraints.RELATIVE;
 
         JButton newGameButton = createButton("Create New Level");
-        newGameButton.addActionListener(e -> startNewGame());
-
         JButton loadGameButton = createButton("Load Existing Level");
-        loadGameButton.addActionListener(e -> loadGame());
-
         JButton exitButton = createButton("Exit");
+
+        newGameButton.addActionListener(e -> startNewGame());
+        loadGameButton.addActionListener(e -> loadGame());
         exitButton.addActionListener(e -> System.exit(0));
 
-        buttonPanel.add(newGameButton);
-        buttonPanel.add(Box.createVerticalStrut(20)); // Add spacing
-        buttonPanel.add(loadGameButton);
-        buttonPanel.add(Box.createVerticalStrut(20)); // Add spacing
-        buttonPanel.add(exitButton);
+        buttonPanel.add(newGameButton, gbc);
+        buttonPanel.add(loadGameButton, gbc);
+        buttonPanel.add(exitButton, gbc);
 
         background.add(buttonPanel);
     }
