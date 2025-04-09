@@ -29,19 +29,15 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
     private int targetFOV = 60; // Target FOV
 
     public Game() {
-        String[] options = {"Create New Level", "Load Existing Level"};
-        int choice = JOptionPane.showOptionDialog(
-            null,
-            "Choose an option:",
-            "Game Menu",
-            JOptionPane.DEFAULT_OPTION,
-            JOptionPane.PLAIN_MESSAGE,
-            null,
-            options,
-            options[0]
-        );
+        this(false); // Default to creating a new level
+    }
 
-        if (choice == 0) {
+    public Game(boolean loadGame) {
+        if (loadGame) {
+            if (!loadLevel()) {
+                System.exit(0); // Exit if no level is loaded
+            }
+        } else {
             map = new Map(new char[20][20]); // Create a blank map
             MapEditor editor = new MapEditor(map); // Open the map editor
             editor.open();
@@ -57,12 +53,6 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
             } else {
                 player = new Player(1.5, 1.5, 0); // Default spawn point if none is set
             }
-        } else if (choice == 1) {
-            if (!loadLevel()) {
-                System.exit(0); // Exit if no level is loaded
-            }
-        } else {
-            System.exit(0); // Exit if no option is selected
         }
 
         renderer = new Renderer(this, map, player);
