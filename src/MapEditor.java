@@ -120,19 +120,7 @@ public class MapEditor extends JFrame {
                     int y = e.getY() / tileSize;
 
                     if (spawnPointBrushActive) {
-                        if (map.getTile(x, y) != '1') { // Allow setting spawn point on any non-wall tile
-                            if (spawnPointSet) {
-                                map.getMapLayout()[spawnY][spawnX] = '0'; // Clear previous spawn point
-                            }
-                            spawnX = x;
-                            spawnY = y;
-                            spawnPointSet = true;
-                            map.getMapLayout()[y][x] = 'S'; // Mark the spawn point in the map layout
-                            if (game != null) {
-                                game.setSpawnPoint(x + 0.5, y + 0.5); // Set spawn point only if game is not null
-                            }
-                            repaint();
-                        }
+                        paintTile(x, y, 'S'); // Set spawn point
                     } else if (trapBrushActive) {
                         paintTile(x, y, 'T'); // Paint trap
                     } else if (SwingUtilities.isLeftMouseButton(e)) {
@@ -171,10 +159,21 @@ public class MapEditor extends JFrame {
 
         private void paintTile(int x, int y, char tileType) {
             if (x >= 0 && x < map.getWidth() && y >= 0 && y < map.getHeight()) {
-                if (map.getTile(x, y) != tileType) {
-                    map.getMapLayout()[y][x] = tileType;
-                    repaint();
+                if (tileType == 'S' && map.getTile(x, y) != '1') { // Set spawn point
+                    if (spawnPointSet) {
+                        map.getMapLayout()[spawnY][spawnX] = '0'; // Clear previous spawn point
+                    }
+                    spawnX = x;
+                    spawnY = y;
+                    spawnPointSet = true;
+                } else if (tileType == 'T' && map.getTile(x, y) != '1') { // Set trap
+                    map.getMapLayout()[y][x] = 'T';
+                } else if (tileType == '1') { // Paint wall
+                    map.getMapLayout()[y][x] = '1';
+                } else if (tileType == '0') { // Erase tile
+                    map.getMapLayout()[y][x] = '0';
                 }
+                repaint();
             }
         }
 
@@ -201,12 +200,10 @@ public class MapEditor extends JFrame {
                         g.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
                         g.setColor(Color.BLACK);
                         g.drawString("S", x * tileSize + tileSize / 2 - 5, y * tileSize + tileSize / 2 + 5); // Draw 'S' for spawn point
-                       
-                        
+                    } else {
+                        g.setColor(Color.GRAY); // Grid lines
+                        g.drawRect(x * tileSize, y * tileSize, tileSize, tileSize);
                     }
-                    else
-                    g.setColor(Color.GRAY); // Grid lines
-                    g.drawRect(x * tileSize, y * tileSize, tileSize, tileSize);
                 }
             }
         }

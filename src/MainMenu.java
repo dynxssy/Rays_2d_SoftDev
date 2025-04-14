@@ -1,27 +1,24 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 
 public class MainMenu extends JPanel {
     private JFrame frame;
+    private BufferedImage backgroundImage;
 
     public MainMenu(JFrame frame) {
         this.frame = frame;
         setLayout(new BorderLayout());
 
-        // Background panel
-        JLabel background = new JLabel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                ImageIcon icon = new ImageIcon("textures/menu_background.jpg");
-                Image scaledImage = icon.getImage().getScaledInstance(getWidth(), getHeight(), Image.SCALE_SMOOTH);
-                g.drawImage(scaledImage, 0, 0, null);
-            }
-        };
-        background.setLayout(new GridBagLayout());
-        add(background, BorderLayout.CENTER);
+        // Load the background image
+        try {
+            backgroundImage = ImageIO.read(new File("textures/menu_background.jpg"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         // Menu buttons
         JPanel buttonPanel = new JPanel();
@@ -44,7 +41,15 @@ public class MainMenu extends JPanel {
         buttonPanel.add(loadGameButton, gbc);
         buttonPanel.add(exitButton, gbc);
 
-        background.add(buttonPanel);
+        add(buttonPanel, BorderLayout.CENTER);
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (backgroundImage != null) {
+            g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+        }
     }
 
     private JButton createButton(String text) {
@@ -60,7 +65,7 @@ public class MainMenu extends JPanel {
 
     private void startNewGame() {
         frame.getContentPane().removeAll();
-        frame.add(new Game());
+        frame.add(new MapEditor(new Map(new char[20][20])));
         frame.revalidate();
         frame.repaint();
     }
