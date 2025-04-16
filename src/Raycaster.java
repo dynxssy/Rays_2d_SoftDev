@@ -17,6 +17,7 @@ public class Raycaster {
     private int screenWidth;
     private int screenHeight;
     private BufferedImage wallTexture;
+    private BufferedImage floorTexture;
     private int fov;
     private int rayResolution;
     private BufferedImage image;
@@ -36,11 +37,12 @@ public class Raycaster {
 
         try {
             wallTexture = ImageIO.read(new File("textures/brick4200x.jpg"));
-            System.out.println("✅ Texture loaded.");
+            floorTexture = ImageIO.read(new File("textures/floor.png"));
         } catch (IOException e) {
             System.out.println("❌ Failed to load wall texture.");
             e.printStackTrace();
         }
+
 
         image = new BufferedImage(screenWidth, screenHeight, BufferedImage.TYPE_INT_RGB);
     }
