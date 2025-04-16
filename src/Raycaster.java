@@ -155,11 +155,11 @@ public class Raycaster {
                         // Texture for regular floor
                         double floorXOffset = floorX - cellX;
                         double floorYOffset = floorY - cellY;
-                        int floorTexX = (int) (floorXOffset * wallTexture.getWidth());
-                        int floorTextureY = (int) (floorYOffset * wallTexture.getHeight());
-                        textureX = Math.max(0, Math.min(textureX, wallTexture.getWidth() - 1));
-                        floorTextureY = Math.max(0, Math.min(floorTextureY, wallTexture.getHeight() - 1));
-                        floorColor = new Color(wallTexture.getRGB(floorTexX, floorTextureY));
+                        int floorTexX = (int) (floorXOffset * floorTexture.getWidth());
+                        int floorTextureY = (int) (floorYOffset * floorTexture.getHeight());
+                        textureX = Math.max(0, Math.min(textureX, floorTexture.getWidth() - 1));
+                        floorTextureY = Math.max(0, Math.min(floorTextureY, floorTexture.getHeight() - 1));
+                        floorColor = new Color(floorTexture.getRGB(floorTexX, floorTextureY));
                     }
                 }
 
