@@ -12,10 +12,13 @@ public class HUD implements KeyListener, MouseListener {
     private boolean isMenuOpen = false;
     private int selectedOption = 0; // Track selected option in the options menu
     private boolean isOptionsMenuOpen = false; // Track if options menu is open
+    private int targetX, targetY; // Target coordinates
 
-    public HUD(Player player, Game game) {
+    public HUD(Player player, Game game, int targetX, int targetY) {
         this.player = player;
         this.game = game;
+        this.targetX = targetX;
+        this.targetY = targetY;
         game.addKeyListener(this); // Add key listener for ESC key
         game.addMouseListener(this); // Add mouse listener for menu buttons
     }
@@ -35,6 +38,9 @@ public class HUD implements KeyListener, MouseListener {
             g.drawString("Position: (" + player.getX() + ", " + player.getY() + ")", 10, 20);
             // Display player direction
             g.drawString("Dots rendered [minimap Lidar]: " + game.dots, 10, 40);
+            // Display distance to target
+            double distance = player.calculateDistance(targetX, targetY);
+            g.drawString("Distance to Target: " + String.format("%.2f", distance), 10, 60);
 
             renderFPS(g, fps); // Render FPS
         }
@@ -69,7 +75,7 @@ public class HUD implements KeyListener, MouseListener {
     private void renderFPS(Graphics g, int fps) {
         g.setColor(Color.BLACK);
         g.setFont(new Font("Arial", Font.BOLD, 20));
-        g.drawString("FPS: " + fps, 10, 60); // Draw FPS at the top-left corner
+        g.drawString("FPS: " + fps, 10, 80); // Draw FPS at the top-left corner
     }
 
     @Override

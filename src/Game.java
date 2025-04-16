@@ -28,6 +28,8 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
     private int rayResolution = 1; // Default ray resolution
     private int targetFOV = 60; // Target FOV
     private final double initialX = 1.5, initialY = 1.5, initialAngle = 0; // Initial spawn point
+    private final int targetX = 3; // Example target X-coordinate
+    private final int targetY = 3; // Example target Y-coordinate
 
     public Game() {
         this(false); // Default to creating a new level
@@ -57,7 +59,7 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
         }
 
         renderer = new Renderer(this, map, player);
-        hud = new HUD(player, this);
+        hud = new HUD(player, this, targetX, targetY); // Pass target coordinates to HUD
         addKeyListener(this);
         addMouseMotionListener(this);
         setFocusable(true);
