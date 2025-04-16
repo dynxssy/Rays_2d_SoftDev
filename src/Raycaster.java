@@ -37,7 +37,7 @@ public class Raycaster {
 
         try {
             wallTexture = ImageIO.read(new File("textures/brick4200x.jpg"));
-            floorTexture = ImageIO.read(new File("textures/floor.png"));
+            floorTexture = ImageIO.read(new File("textures/floor.jpg"));
         } catch (IOException e) {
             System.out.println("❌ Failed to load wall texture.");
             e.printStackTrace();
