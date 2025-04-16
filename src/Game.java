@@ -179,19 +179,14 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
     }
 
     private void renderMiniMap(Graphics g) {
-        int miniMapSize = Math.min(getWidth(), getHeight()) / 5; // Mini-map size is 1/5th of the smaller screen dimension
-        int tileSize = miniMapSize / map.getWidth(); // Size of each tile on the mini-map
-        int offsetX = (getWidth() - miniMapSize) / 2; // Center the mini-map horizontally
-        int offsetY = getHeight() - miniMapSize - 10; // Position the mini-map 10px above the bottom edge
+        int miniMapSize = Math.min(getWidth(), getHeight()) / 5;
+        int tileSize = miniMapSize / map.getWidth();
+        int offsetX = (getWidth() - miniMapSize) / 2;
+        int offsetY = getHeight() - miniMapSize - 10;
 
-        // Draw the map
         for (int y = 0; y < map.getHeight(); y++) {
             for (int x = 0; x < map.getWidth(); x++) {
-                if (map.isWall(x, y)) {
-                    //g.setColor(Color.DARK_GRAY); // Wall color
-                } else {
-                    g.setColor(Color.LIGHT_GRAY); // Floor color
-                }
+                g.setColor(map.isWall(x, y) ? Color.DARK_GRAY : Color.LIGHT_GRAY); // Fix wall rendering
                 g.fillRect(offsetX + x * tileSize, offsetY + y * tileSize, tileSize, tileSize);
             }
         }
@@ -236,8 +231,6 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
         g.setColor(Color.BLACK);
         for (Point point : rayEndPoints) {
             g.fillOval(point.x - 1, point.y - 1, 2, 2); // Draw a small black dot
-            
-
         }
     }
 

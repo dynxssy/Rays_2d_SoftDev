@@ -8,7 +8,7 @@ public class TextureLoader {
 
     public static void loadTextures() {
         try {
-            wallTexture = ImageIO.read(new File("textures/brick.jpg")); // Corrected path
+            wallTexture = ImageIO.read(new File("textures/brick.jpg")); // Ensure this path matches the actual texture location
         } catch (IOException e) {
             e.printStackTrace();
         }

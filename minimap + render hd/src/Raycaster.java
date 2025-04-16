@@ -27,8 +27,8 @@ public class Raycaster {
         BufferedImage image = new BufferedImage(screenWidth, screenHeight, BufferedImage.TYPE_INT_RGB);
         Graphics g = image.getGraphics();
 
-        for (int x = 0; x < screenWidth * 2; x++) { // Double the number of rays
-            double rayAngle = playerAngle - Math.PI / 6 + (Math.PI / 3) * x / (screenWidth * 2);
+        for (int x = 0; x < screenWidth; x++) { // Corrected loop to match screen width
+            double rayAngle = playerAngle - Math.PI / 6 + (Math.PI / 3) * x / screenWidth;
             double rayX = Math.cos(rayAngle);
             double rayY = Math.sin(rayAngle);
             double distance = 0;
@@ -52,7 +52,7 @@ public class Raycaster {
                     // Calculate color based on distance (closer = lighter, farther = darker)
                     int shade = (int) Math.max(0, 255 - correctedDistance * 50); // Adjust multiplier for effect
                     g.setColor(new Color(shade, shade, shade));
-                    g.fillRect(x / 2, drawStart, 1, wallHeight); // Scale down to fit screen width
+                    g.fillRect(x, drawStart, 1, wallHeight); // Scale down to fit screen width
                     break;
                 }
             }
