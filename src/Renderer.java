@@ -42,6 +42,7 @@ public class Renderer {
         g.drawImage(image, 0, 0, null);
     }
 
+    // Converts the character-based map layout into an integer array for raycasting
     private int[][] convertMapToIntArray(char[][] charMap) {
         int[][] intMap = new int[charMap.length][charMap[0].length];
         for (int y = 0; y < charMap.length; y++) {

@@ -157,6 +157,7 @@ public class MapEditor extends JFrame {
             });
         }
 
+        // Paints a tile on the map based on the selected brush type
         private void paintTile(int x, int y, char tileType) {
             if (x >= 0 && x < map.getWidth() && y >= 0 && y < map.getHeight()) {
                 if (tileType == 'S' && map.getTile(x, y) != '1') { // Set spawn point

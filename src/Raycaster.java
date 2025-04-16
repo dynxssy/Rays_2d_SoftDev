@@ -44,25 +44,25 @@ public class Raycaster {
         image = new BufferedImage(screenWidth, screenHeight, BufferedImage.TYPE_INT_RGB);
     }
 
+    // Main raycasting logic to calculate wall distances and render textures
     public BufferedImage castRays() {
         Graphics2D g = (Graphics2D) image.getGraphics();
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 
-        // Ceiling
+        // Render ceiling and floor with gradient shading
         for (int y = 0; y < screenHeight / 2; y++) {
-            int shade = (int) (255 - (255.0 * y / (screenHeight / 2)));
+            int shade = (int) (255 - (255.0 * y / (screenHeight / 2))); // Gradient for ceiling
             g.setColor(new Color(shade, shade, shade));
             g.drawLine(0, y, screenWidth, y);
         }
 
-        // Floor
         for (int y = screenHeight / 2; y < screenHeight; y++) {
-            int shade = (int) (1 + (205.0 * (y - screenHeight / 2) / (screenHeight / 2)));
+            int shade = (int) (1 + (205.0 * (y - screenHeight / 2) / (screenHeight / 2))); // Gradient for floor
             g.setColor(new Color(shade, shade, shade));
             g.drawLine(0, y, screenWidth, y);
         }
 
-        // Raycasting
+        // Raycasting logic for walls
         for (int x = 0; x < screenWidth; x++) {
             double rayAngle = playerAngle - Math.toRadians(fov / 2) + Math.toRadians(fov) * x / screenWidth;
             double rayX = Math.cos(rayAngle);

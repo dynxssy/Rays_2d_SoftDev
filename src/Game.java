@@ -118,6 +118,7 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
         return true;
     }
 
+    // Main game loop that handles input, updates, and rendering
     public void start() {
         // Center the mouse cursor
         Toolkit.getDefaultToolkit().getBestCursorSize(1, 1);
@@ -134,15 +135,10 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
                 lastTime = now;
             }
 
-            processInput();
-            player.update(map);
-            if (map.getTile((int) player.getX(), (int) player.getY()) == 'T') {
-                targetFOV = 120;
-            } else {
-                targetFOV = 60;
-            }
-            smoothFOVTransition();
-            render();
+            processInput(); // Handle player input
+            player.update(map); // Update player state
+            smoothFOVTransition(); // Smoothly adjust FOV if needed
+            render(); // Render the game
             recenterMouse(); // Recenter the mouse after each frame
         }
     }
