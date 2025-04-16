@@ -84,6 +84,9 @@ public class Player {
         return moveSpeed;
     }
 
+    /**
+     * Resets the player's position and angle to the specified starting values.
+     */
     public void resetPosition(double startX, double startY, double startAngle) {
         this.x = startX;
         this.y = startY;
