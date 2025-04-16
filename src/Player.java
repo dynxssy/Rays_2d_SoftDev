@@ -85,10 +85,29 @@ public class Player {
     }
 
     /**
-     * Returns the player's current position as a formatted string.
+     * Returns the player's current position as a formatted string (x, y).
      */
     public String getPosition() {
         return String.format("(%.2f, %.2f)", x, y);
+    }
+
+    /**
+     * Calculates the distance from the player to a given point (targetX, targetY).
+     */
+    public double calculateDistance(double targetX, double targetY) {
+        return Math.sqrt(Math.pow(targetX - x, 2) + Math.pow(targetY - y, 2));
+    }
+
+    /**
+     * Checks if the player is within a certain distance of a target point.
+     * 
+     * @param targetX The x-coordinate of the target point.
+     * @param targetY The y-coordinate of the target point.
+     * @param distance The maximum distance to check.
+     * @return True if the player is within the specified distance, false otherwise.
+     */
+    public boolean isWithinDistance(double targetX, double targetY, double distance) {
+        return calculateDistance(targetX, targetY) <= distance;
     }
 
     /**
