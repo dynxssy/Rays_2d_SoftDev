@@ -119,12 +119,12 @@ public class Raycaster {
             }
             wallX -= Math.floor(wallX);
             int textureX = (int) (wallX * wallTexture.getWidth());
-            floorTextureX = Math.max(0, Math.min(floorTextureX, wallTexture.getWidth() - 1));
+            int floorTextureX = Math.max(0, Math.min(textureX, wallTexture.getWidth() - 1));
 
             for (int drawY = drawStart; drawY < drawEnd; drawY++) {
                 double sampleRatio = (drawY - drawStart) / wallHeight;
                 int textureY = (int) (sampleRatio * wallTexture.getHeight());
-                floorTextureY = Math.max(0, Math.min(floorTextureY, wallTexture.getHeight() - 1));
+                int floorTextureY = Math.max(0, Math.min(textureY, wallTexture.getHeight() - 1));
 
                 try {
                     int color = wallTexture.getRGB(textureX, textureY);
@@ -153,11 +153,11 @@ public class Raycaster {
                         // Texture for regular floor
                         double floorXOffset = floorX - cellX;
                         double floorYOffset = floorY - cellY;
-                        int floorTextureX = (int) (floorXOffset * wallTexture.getWidth());
+                        int floorTexX = (int) (floorXOffset * wallTexture.getWidth());
                         int floorTextureY = (int) (floorYOffset * wallTexture.getHeight());
                         textureX = Math.max(0, Math.min(textureX, wallTexture.getWidth() - 1));
-                        textureY = Math.max(0, Math.min(textureY, wallTexture.getHeight() - 1));
-                        floorColor = new Color(wallTexture.getRGB(floorTextureX, floorTextureY));
+                        floorTextureY = Math.max(0, Math.min(floorTextureY, wallTexture.getHeight() - 1));
+                        floorColor = new Color(wallTexture.getRGB(floorTexX, floorTextureY));
                     }
                 }
 
