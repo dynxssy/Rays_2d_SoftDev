@@ -22,6 +22,7 @@ public class Main {
         frame.setResizable(false);
         frame.setVisible(true);
         
+        
         game.start();
     }
 }   

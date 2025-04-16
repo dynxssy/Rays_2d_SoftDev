@@ -142,7 +142,6 @@ public class Raycaster {
 
                 int cellX = (int) floorX;
                 int cellY = (int) floorY;
-
                 Color floorColor = null;
                 if (cellX >= 0 && cellX < mapWidth && cellY >= 0 && cellY < mapHeight) {
                     char tile = map[cellY][cellX];
@@ -150,6 +149,15 @@ public class Raycaster {
                         floorColor = new Color(0, 0, 255); // Blue for FOV trap
                     } else if (tile == 'E') {
                         floorColor = new Color(255, 0, 0); // Red for endgame trap
+                    } else {
+                        // Texture for regular floor
+                        double floorXOffset = floorX - cellX;
+                        double floorYOffset = floorY - cellY;
+                        int textureX = (int) (floorXOffset * wallTexture.getWidth());
+                        int textureY = (int) (floorYOffset * wallTexture.getHeight());
+                        textureX = Math.max(0, Math.min(textureX, wallTexture.getWidth() - 1));
+                        textureY = Math.max(0, Math.min(textureY, wallTexture.getHeight() - 1));
+                        floorColor = new Color(wallTexture.getRGB(textureX, textureY));
                     }
                 }
 
