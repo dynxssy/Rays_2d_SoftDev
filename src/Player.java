@@ -85,7 +85,15 @@ public class Player {
     }
 
     /**
+     * Returns the player's current position as a formatted string.
+     */
+    public String getPosition() {
+        return String.format("(%.2f, %.2f)", x, y);
+    }
+
+    /**
      * Resets the player's position and angle to the specified starting values.
+     * This is useful for respawning or resetting the game state.
      */
     public void resetPosition(double startX, double startY, double startAngle) {
         this.x = startX;
