@@ -83,4 +83,10 @@ public class Player {
     public double getMoveSpeed() {
         return moveSpeed;
     }
+
+    public void resetPosition(double startX, double startY, double startAngle) {
+        this.x = startX;
+        this.y = startY;
+        this.angle = startAngle;
+    }
 }

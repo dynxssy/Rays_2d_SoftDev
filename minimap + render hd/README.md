@@ -42,6 +42,7 @@ my-raycaster-game
 - **A**: Move left
 - **D**: Move right
 - **Arrow Keys**: Rotate the view
+- **R**: Reset player position
 
 ## License
 This project is open-source and available for modification and distribution. Enjoy exploring the world of raycasting!

@@ -27,6 +27,7 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
     private double mouseSensitivity = 0.001; // Default mouse sensitivity
     private int rayResolution = 1; // Default ray resolution
     private int targetFOV = 60; // Target FOV
+    private final double initialX = 1.5, initialY = 1.5, initialAngle = 0; // Initial spawn point
 
     public Game() {
         this(false); // Default to creating a new level
@@ -51,7 +52,7 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
             if (editor.isSpawnPointSet()) {
                 player = new Player(editor.getSpawnX() + 0.5, editor.getSpawnY() + 0.5, 0); // Use the spawn point set in the editor
             } else {
-                player = new Player(1.5, 1.5, 0); // Default spawn point if none is set
+                player = new Player(initialX, initialY, initialAngle); // Default spawn point if none is set
             }
         }
 
@@ -149,6 +150,7 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
         if (keys[KeyEvent.VK_S]) player.moveBackward(map);
         if (keys[KeyEvent.VK_A]) player.strafeLeft(map); // Strafe left
         if (keys[KeyEvent.VK_D]) player.strafeRight(map); // Strafe right
+        if (keys[KeyEvent.VK_R]) player.resetPosition(initialX, initialY, initialAngle); // Reset position
     }
 
     private void render() {
