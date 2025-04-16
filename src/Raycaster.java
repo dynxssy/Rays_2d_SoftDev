@@ -3,11 +3,15 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.awt.image.AffineTransformOp;
+import java.awt.geom.AffineTransform;
 import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 
 public class Raycaster {
+    private static final double TEXTURE_SCALE = 0.2; // Scale factor for texture resolution
+
     private char[][] map;
     private int mapWidth;
     private int mapHeight;
@@ -36,15 +40,26 @@ public class Raycaster {
         this.rayResolution = rayResolution;
 
         try {
-            wallTexture = ImageIO.read(new File("textures/brick4200x.jpg"));
-            floorTexture = ImageIO.read(new File("textures/floor.jpg"));
+            BufferedImage originalWallTexture = ImageIO.read(new File("textures/brick4200x.jpg"));
+            BufferedImage originalFloorTexture = ImageIO.read(new File("textures/floor.jpg"));
+
+            wallTexture = scaleTexture(originalWallTexture, TEXTURE_SCALE);
+            floorTexture = scaleTexture(originalFloorTexture, TEXTURE_SCALE);
         } catch (IOException e) {
-            System.out.println("❌ Failed to load wall texture.");
+            System.out.println("❌ Failed to load textures.");
             e.printStackTrace();
         }
 
-
         image = new BufferedImage(screenWidth, screenHeight, BufferedImage.TYPE_INT_RGB);
+    }
+
+    private BufferedImage scaleTexture(BufferedImage original, double scale) {
+        int newWidth = (int) (original.getWidth() * scale);
+        int newHeight = (int) (original.getHeight() * scale);
+        BufferedImage scaled = new BufferedImage(newWidth, newHeight, original.getType());
+        AffineTransform at = AffineTransform.getScaleInstance(scale, scale);
+        AffineTransformOp scaleOp = new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
+        return scaleOp.filter(original, scaled);
     }
 
     public BufferedImage castRays() {
