@@ -1,38 +1,31 @@
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.image.BufferedImage;
-import java.awt.image.AffineTransformOp;
-import java.awt.geom.AffineTransform;
+import java.awt.*;
+import java.awt.image.*;
 import java.awt.TexturePaint;
 import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
-import java.awt.Rectangle;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 
 
 public class Raycaster {
-    private static final double TEXTURE_SCALE = 0.2; // Scale factor for texture resolution
+    private static final double TEXTURE_SCALE = 0.2;
 
     private char[][] map;
-    private int mapWidth;
-    private int mapHeight;
-    private double playerX;
-    private double playerY;
-    private double playerAngle;
-    private int screenWidth;
-    private int screenHeight;
+    private int mapWidth, mapHeight;
+    private double playerX, playerY, playerAngle;
+    private int screenWidth, screenHeight;
+    private int fov, rayResolution;
+
     private BufferedImage wallTexture;
     private BufferedImage floorTexture;
     private BufferedImage skyTexture;
-
-    private int fov;
-    private int rayResolution;
     private BufferedImage image;
 
-    public Raycaster(char[][] map, int mapWidth, int mapHeight, double playerX, double playerY, double playerAngle,
-                     int screenWidth, int screenHeight, int fov, int rayResolution) {
+    public Raycaster(char[][] map, int mapWidth, int mapHeight,
+                     double playerX, double playerY, double playerAngle,
+                     int screenWidth, int screenHeight,
+                     int fov, int rayResolution) {
         this.map = map;
         this.mapWidth = mapWidth;
         this.mapHeight = mapHeight;
@@ -45,172 +38,131 @@ public class Raycaster {
         this.rayResolution = rayResolution;
 
         try {
-            BufferedImage originalWallTexture = ImageIO.read(new File("textures/brick4200x.jpg"));
-            BufferedImage originalFloorTexture = ImageIO.read(new File("textures/floor.jpg"));
-
-            wallTexture = scaleTexture(originalWallTexture, TEXTURE_SCALE);
-            floorTexture = scaleTexture(originalFloorTexture, TEXTURE_SCALE);
-            skyTexture   = ImageIO.read(new File("textures/sky.png"));
+            BufferedImage rawWall  = ImageIO.read(new File("textures/brick4200x.jpg"));
+            BufferedImage rawFloor = ImageIO.read(new File("textures/floor.jpg"));
+            wallTexture  = scaleTexture(rawWall, TEXTURE_SCALE);
+            floorTexture = scaleTexture(rawFloor, TEXTURE_SCALE);
+            skyTexture   = ImageIO.read(new File("textures/sky1.jpg"));
         } catch (IOException e) {
-            System.out.println("❌ Failed to load textures.");
+            System.err.println("❌ Texture load error:");
             e.printStackTrace();
         }
 
         image = new BufferedImage(screenWidth, screenHeight, BufferedImage.TYPE_INT_RGB);
     }
 
-    private BufferedImage scaleTexture(BufferedImage original, double scale) {
-        int newWidth = (int) (original.getWidth() * scale);
-        int newHeight = (int) (original.getHeight() * scale);
-        BufferedImage scaled = new BufferedImage(newWidth, newHeight, original.getType());
+    private BufferedImage scaleTexture(BufferedImage orig, double scale) {
+        int w = (int)(orig.getWidth() * scale);
+        int h = (int)(orig.getHeight() * scale);
+        BufferedImage buff = new BufferedImage(w, h, orig.getType());
         AffineTransform at = AffineTransform.getScaleInstance(scale, scale);
-        AffineTransformOp scaleOp = new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
-        return scaleOp.filter(original, scaled);
+        AffineTransformOp op = new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
+        return op.filter(orig, buff);
     }
 
     public BufferedImage castRays() {
-        Graphics2D g = (Graphics2D) image.getGraphics();
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        Graphics2D g2d = image.createGraphics();
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 
+        // Draw sky using TexturePaint for easy horizontal scrolling and tiling
         int skyH = screenHeight / 2;
         if (skyTexture != null) {
-            TexturePaint skyPaint = new TexturePaint(
-                    skyTexture,
-                    new Rectangle(0, 0, skyTexture.getWidth(), skyH)
-            );
-            g.setPaint(skyPaint);
-            g.fillRect(0, 0, screenWidth, skyH);
-            g.setPaint(Color.BLACK);
+            int texW = skyTexture.getWidth();
+            // compute scroll offset based on player angle
+            float offsetX = (float)((playerAngle / (2 * Math.PI)) * texW) % texW;
+            if (offsetX < 0) offsetX += texW;
+            Rectangle anchor = new Rectangle((int)-offsetX, 0, texW, skyH);
+            TexturePaint skyPaint = new TexturePaint(skyTexture, anchor);
+            g2d.setPaint(skyPaint);
+            g2d.fillRect(0, 0, screenWidth, skyH);
+            // reset paint to default
+            g2d.setPaint(Color.BLACK);
         } else {
-            // fallback to solid color
-            g.setColor(new Color(135, 206, 235));
-            g.fillRect(0, 0, screenWidth, skyH);
-            g.setColor(Color.BLACK);
+            g2d.setPaint(new Color(135, 206, 235));
+            g2d.fillRect(0, 0, screenWidth, skyH);
+            g2d.setPaint(Color.BLACK);
         }
-// still clear bottom half to black
-        g.fillRect(0, skyH, screenWidth, screenHeight - skyH);
 
+        // Cache floor texture dims
+        int floorTexW = (floorTexture != null ? floorTexture.getWidth() : 0);
+        int floorTexH = (floorTexture != null ? floorTexture.getHeight() : 0);
 
-        for (int x = 0; x < screenWidth; x++) {
-            double rayAngle = playerAngle - Math.toRadians(fov / 2) + Math.toRadians(fov) * x / screenWidth;
-            double rayX = Math.cos(rayAngle);
-            double rayY = Math.sin(rayAngle);
+        // Ray casting for walls and floors
+        for (int x = 0; x < screenWidth; x += rayResolution) {
+            double rayAngle = playerAngle - Math.toRadians(fov/2)
+                    + Math.toRadians(fov) * x / screenWidth;
+            double dx = Math.cos(rayAngle);
+            double dy = Math.sin(rayAngle);
 
-            double sideDistX, sideDistY;
-            double deltaDistX = (rayX == 0) ? 1e30 : Math.abs(1 / rayX);
-            double deltaDistY = (rayY == 0) ? 1e30 : Math.abs(1 / rayY);
+            // DDA initialization
+            double deltaX = dx == 0 ? 1e30 : Math.abs(1 / dx);
+            double deltaY = dy == 0 ? 1e30 : Math.abs(1 / dy);
+            int mapX = (int)playerX;
+            int mapY = (int)playerY;
+            int stepX = dx < 0 ? -1 : 1;
+            int stepY = dy < 0 ? -1 : 1;
+            double sideX = dx < 0 ? (playerX - mapX) * deltaX : (mapX + 1 - playerX) * deltaX;
+            double sideY = dy < 0 ? (playerY - mapY) * deltaY : (mapY + 1 - playerY) * deltaY;
 
-            int stepX, stepY;
-            int mapX = (int) playerX;
-            int mapY = (int) playerY;
-            int side = 0;
             boolean hit = false;
-
-            if (rayX < 0) {
-                stepX = -1;
-                sideDistX = (playerX - mapX) * deltaDistX;
-            } else {
-                stepX = 1;
-                sideDistX = (mapX + 1.0 - playerX) * deltaDistX;
-            }
-
-            if (rayY < 0) {
-                stepY = -1;
-                sideDistY = (playerY - mapY) * deltaDistY;
-            } else {
-                stepY = 1;
-                sideDistY = (mapY + 1.0 - playerY) * deltaDistY;
-            }
-
+            int side = 0;
             while (!hit) {
-                if (sideDistX < sideDistY) {
-                    sideDistX += deltaDistX;
-                    mapX += stepX;
-                    side = 0;
-                } else {
-                    sideDistY += deltaDistY;
-                    mapY += stepY;
-                    side = 1;
-                }
-
-                if (mapX < 0 || mapX >= mapWidth || mapY < 0 || mapY >= mapHeight || map[mapY][mapX] == '1') {
-                    hit = true;
-                }
+                if (sideX < sideY) { sideX += deltaX; mapX += stepX; side = 0; }
+                else               { sideY += deltaY; mapY += stepY; side = 1; }
+                if (mapX < 0 || mapX >= mapWidth
+                        || mapY < 0 || mapY >= mapHeight
+                        || map[mapY][mapX] == '1') hit = true;
             }
 
-            double correctedDistance = (side == 0)
-                    ? (mapX - playerX + (1 - stepX) / 2) / rayX
-                    : (mapY - playerY + (1 - stepY) / 2) / rayY;
+            double dist = (side == 0)
+                    ? (mapX - playerX + (1 - stepX) / 2) / dx
+                    : (mapY - playerY + (1 - stepY) / 2) / dy;
+            dist = Math.max(dist, 1e-4);
 
-            if (correctedDistance < 0.0001) correctedDistance = 0.0001;
+            // Draw wall slice
+            int lineH = (int)(screenHeight / dist);
+            int yStart = Math.max(0, (screenHeight - lineH) / 2);
+            int yEnd   = Math.min(screenHeight, (screenHeight + lineH) / 2);
+            double wallX = ((side == 0) ? playerY + dist * dy : playerX + dist * dx) % 1.0;
+            int texX = (int)(wallX * wallTexture.getWidth());
 
-            double wallHeight = screenHeight / correctedDistance;
-            int drawStart = (int) (screenHeight / 2 - wallHeight / 2);
-            int drawEnd = (int) (screenHeight / 2 + wallHeight / 2);
-            drawStart = Math.max(0, drawStart);
-            drawEnd = Math.min(screenHeight, drawEnd);
-
-            double wallX;
-            if (side == 0) {
-                wallX = playerY + correctedDistance * rayY;
-            } else {
-                wallX = playerX + correctedDistance * rayX;
-            }
-            wallX -= Math.floor(wallX);
-            int textureX = (int) (wallX * wallTexture.getWidth());
-            int floorTextureX = Math.max(0, Math.min(textureX, wallTexture.getWidth() - 1));
-
-            for (int drawY = drawStart; drawY < drawEnd; drawY++) {
-                double sampleRatio = (drawY - drawStart) / wallHeight;
-                int textureY = (int) (sampleRatio * wallTexture.getHeight());
-                int floorTextureY = Math.max(0, Math.min(textureY, wallTexture.getHeight() - 1));
-
-                try {
-                    int color = wallTexture.getRGB(textureX, textureY);
-                    image.setRGB(x, drawY, color);
-                } catch (Exception e) {
-                    image.setRGB(x, drawY, new Color(255, 0, 0).getRGB());
-                }
+            for (int y = yStart; y < yEnd; y++) {
+                double sample = (double)(y - yStart) / lineH;
+                int texY = (int)(sample * wallTexture.getHeight());
+                image.setRGB(x, y, wallTexture.getRGB(texX, texY));
             }
 
-            // Dynamic floor coloring
-            for (int y = drawEnd; y < screenHeight; y++) {
+            // Draw floor slice
+            for (int y = yEnd; y < screenHeight; y++) {
                 double floorDist = screenHeight / (2.0 * y - screenHeight);
-                double floorX = playerX + rayX * floorDist;
-                double floorY = playerY + rayY * floorDist;
-                int cellX = (int) floorX;
-                int cellY = (int) floorY;
-                Color floorColor = null;
+                double fx = playerX + dx * floorDist;
+                double fy = playerY + dy * floorDist;
+                int cx = (int)fx, cy = (int)fy;
+                Color floorColor;
 
-                if (cellX >= 0 && cellX < mapWidth && cellY >= 0 && cellY < mapHeight) {
-                    char tile = map[cellY][cellX];
-                    if (tile == 'T') {
-                        floorColor = new Color(0, 0, 255); // Blue for FOV trap
-                    } else if (tile == 'E') {
-                        floorColor = new Color(255, 0, 0); // Red for endgame trap
+                if (cx >= 0 && cx < mapWidth && cy >= 0 && cy < mapHeight) {
+                    char t = map[cy][cx];
+                    if (t == 'T') floorColor = new Color(0, 0, 255);
+                    else if (t == 'E') floorColor = new Color(255, 0, 0);
+                    else if (t == 'R') floorColor = new Color(255, 0, 255);
+                    else if (floorTexture != null) {
+                        int tx = Math.min(floorTexW - 1, Math.max(0, (int)((fx - cx) * floorTexW)));
+                        int ty = Math.min(floorTexH - 1, Math.max(0, (int)((fy - cy) * floorTexH)));
+                        floorColor = new Color(floorTexture.getRGB(tx, ty));
                     } else {
-                        // Texture for regular floor
-                        double floorXOffset = floorX - cellX;
-                        double floorYOffset = floorY - cellY;
-                        int floorTexX = (int) (floorXOffset * floorTexture.getWidth());
-                        int floorTextureY = (int) (floorYOffset * floorTexture.getHeight());
-                        textureX = Math.max(0, Math.min(textureX, floorTexture.getWidth() - 1));
-                        floorTextureY = Math.max(0, Math.min(floorTextureY, floorTexture.getHeight() - 1));
-                        floorColor = new Color(floorTexture.getRGB(floorTexX, floorTextureY));
+                        floorColor = Color.GRAY;
                     }
-                }
-
-                if (floorColor == null) {
-                    int shade = (int) (1 + (205.0 * (y - screenHeight / 2) / (screenHeight / 2)));
-                    shade = Math.max(0, Math.min(255, shade));
+                } else {
+                    int shade = Math.max(0, Math.min(255,
+                            (int)(1 + 205.0 * (y - screenHeight / 2) / (screenHeight / 2))));
                     floorColor = new Color(shade, shade, shade);
                 }
-
                 image.setRGB(x, y, floorColor.getRGB());
             }
         }
 
-        g.dispose();
+        g2d.dispose();
         return image;
     }
 }
