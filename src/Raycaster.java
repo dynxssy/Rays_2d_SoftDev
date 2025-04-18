@@ -9,6 +9,8 @@ import java.awt.TexturePaint;
 import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
+import java.awt.Rectangle;
+
 
 public class Raycaster {
     private static final double TEXTURE_SCALE = 0.2; // Scale factor for texture resolution
@@ -70,16 +72,24 @@ public class Raycaster {
         Graphics2D g = (Graphics2D) image.getGraphics();
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 
-        // height of the sky region (top half of screen)
         int skyH = screenHeight / 2;
-
-// fill top half with sky‑blue
-        g.setColor(new Color(135, 206, 235));
-        g.fillRect(0, 0, screenWidth, skyH);
-
-// fill bottom half black (background before floor rendering)
-        g.setColor(Color.BLACK);
+        if (skyTexture != null) {
+            TexturePaint skyPaint = new TexturePaint(
+                    skyTexture,
+                    new Rectangle(0, 0, skyTexture.getWidth(), skyH)
+            );
+            g.setPaint(skyPaint);
+            g.fillRect(0, 0, screenWidth, skyH);
+            g.setPaint(Color.BLACK);
+        } else {
+            // fallback to solid color
+            g.setColor(new Color(135, 206, 235));
+            g.fillRect(0, 0, screenWidth, skyH);
+            g.setColor(Color.BLACK);
+        }
+// still clear bottom half to black
         g.fillRect(0, skyH, screenWidth, screenHeight - skyH);
+
 
         for (int x = 0; x < screenWidth; x++) {
             double rayAngle = playerAngle - Math.toRadians(fov / 2) + Math.toRadians(fov) * x / screenWidth;
