@@ -70,8 +70,16 @@ public class Raycaster {
         Graphics2D g = (Graphics2D) image.getGraphics();
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 
+        // height of the sky region (top half of screen)
+        int skyH = screenHeight / 2;
+
+// fill top half with sky‑blue
+        g.setColor(new Color(135, 206, 235));
+        g.fillRect(0, 0, screenWidth, skyH);
+
+// fill bottom half black (background before floor rendering)
         g.setColor(Color.BLACK);
-        g.fillRect(0, 0, screenWidth, screenHeight);
+        g.fillRect(0, skyH, screenWidth, screenHeight - skyH);
 
         for (int x = 0; x < screenWidth; x++) {
             double rayAngle = playerAngle - Math.toRadians(fov / 2) + Math.toRadians(fov) * x / screenWidth;
