@@ -48,6 +48,7 @@ public class Raycaster {
 
             wallTexture = scaleTexture(originalWallTexture, TEXTURE_SCALE);
             floorTexture = scaleTexture(originalFloorTexture, TEXTURE_SCALE);
+            skyTexture   = ImageIO.read(new File("textures/sky.png"));
         } catch (IOException e) {
             System.out.println("❌ Failed to load textures.");
             e.printStackTrace();
