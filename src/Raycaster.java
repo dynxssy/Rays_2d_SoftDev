@@ -5,6 +5,7 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.awt.image.AffineTransformOp;
 import java.awt.geom.AffineTransform;
+import java.awt.TexturePaint;
 import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
@@ -22,6 +23,8 @@ public class Raycaster {
     private int screenHeight;
     private BufferedImage wallTexture;
     private BufferedImage floorTexture;
+    private BufferedImage skyTexture;
+
     private int fov;
     private int rayResolution;
     private BufferedImage image;
@@ -156,10 +159,10 @@ public class Raycaster {
                 double floorDist = screenHeight / (2.0 * y - screenHeight);
                 double floorX = playerX + rayX * floorDist;
                 double floorY = playerY + rayY * floorDist;
-
                 int cellX = (int) floorX;
                 int cellY = (int) floorY;
                 Color floorColor = null;
+
                 if (cellX >= 0 && cellX < mapWidth && cellY >= 0 && cellY < mapHeight) {
                     char tile = map[cellY][cellX];
                     if (tile == 'T') {
