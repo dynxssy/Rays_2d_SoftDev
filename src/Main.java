@@ -12,6 +12,11 @@ public class Main {
 
     public static void main(String[] args) {
         JFrame frame = new JFrame("Java Raycaster Game");
+
+        TextureLoader.loadTextures();
+        SoundManager.playBackgroundMusic("Rays_2d_SoftDev-main/sounds/background-music.wav");
+
+
         TextureLoader.loadTextures();
 
         Game game = new Game();
@@ -21,7 +26,6 @@ public class Main {
         frame.add(game);
         frame.setResizable(false);
         frame.setVisible(true);
-        
         
         game.start();
     }

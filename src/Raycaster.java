@@ -38,11 +38,11 @@ public class Raycaster {
         this.rayResolution = rayResolution;
 
         try {
-            BufferedImage rawWall  = ImageIO.read(new File("textures/brick4200x.jpg"));
-            BufferedImage rawFloor = ImageIO.read(new File("textures/floor.jpg"));
+            BufferedImage rawWall  = ImageIO.read(new File("Rays_2d_SoftDev-main/textures/brick4200x.jpg"));
+            BufferedImage rawFloor = ImageIO.read(new File("Rays_2d_SoftDev-main/textures/floor.jpg"));
             wallTexture  = scaleTexture(rawWall, TEXTURE_SCALE);
             floorTexture = scaleTexture(rawFloor, TEXTURE_SCALE);
-            skyTexture   = ImageIO.read(new File("textures/sky1.jpg"));
+            skyTexture   = ImageIO.read(new File("Rays_2d_SoftDev-maintextures/sky1.jpg"));
         } catch (IOException e) {
             System.err.println("❌ Texture load error:");
             e.printStackTrace();
