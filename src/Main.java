@@ -1,10 +1,4 @@
 import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-import javax.imageio.ImageIO;
-
 
 public class Main {
     private static final int WIDTH = 800;
@@ -13,12 +7,10 @@ public class Main {
     public static void main(String[] args) {
         JFrame frame = new JFrame("Java Raycaster Game");
 
+        // Load textures and start background music
         TextureLoader.loadTextures();
-        SoundManager.playBackgroundMusic("Rays_2d_SoftDev-main/sounds/background-music.wav");
-
-
-        TextureLoader.loadTextures();
-
+        SoundManager.playBackgroundMusic("sounds/background-music.mp3");  // Add your music file here
+        
         Game game = new Game();
         
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -29,4 +21,4 @@ public class Main {
         
         game.start();
     }
-}   
+}
