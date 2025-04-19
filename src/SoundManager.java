@@ -5,7 +5,7 @@ import java.io.IOException;
 public class SoundManager {
     private static Clip backgroundMusicClip;
     
-    // Play a sound from a file (can be sound effects or background music)
+    // Play a sound from a file (for sound effects)
     public static void playSound(String filePath) {
         try {
             File soundFile = new File(filePath);
