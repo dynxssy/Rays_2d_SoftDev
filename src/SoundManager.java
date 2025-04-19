@@ -3,38 +3,23 @@ import java.io.File;
 import java.io.IOException;
 
 public class SoundManager {
-    private static Clip backgroundMusicClip;
-    
-    // Play a sound from a file (for sound effects)
-    public static void playSound(String filePath) {
+    private Clip clip;
+
+    public void playMusic(String filePath) {
         try {
-            File soundFile = new File(filePath);
-            AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundFile);
-            Clip clip = AudioSystem.getClip();
-            clip.open(audioIn);
-            clip.start();
+            File musicFile = new File(filePath);  // Load music file
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(musicFile);  // Get the audio stream
+            clip = AudioSystem.getClip();  // Get a clip to play the music
+            clip.open(audioStream);  // Open the clip with the audio stream
+            clip.loop(Clip.LOOP_CONTINUOUSLY);  // Loop the music indefinitely
         } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-    
-    // Loop background music
-    public static void playBackgroundMusic(String filePath) {
-        try {
-            File soundFile = new File(filePath);
-            AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundFile);
-            backgroundMusicClip = AudioSystem.getClip();
-            backgroundMusicClip.open(audioIn);
-            backgroundMusicClip.loop(Clip.LOOP_CONTINUOUSLY);  // Loop indefinitely
-        } catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace();  // Handle errors
         }
     }
 
-    // Stop the background music
-    public static void stopBackgroundMusic() {
-        if (backgroundMusicClip != null) {
-            backgroundMusicClip.stop();
+    public void stopMusic() {
+        if (clip != null && clip.isRunning()) {
+            clip.stop();  // Stop the music if it is playing
         }
     }
 }

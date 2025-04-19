@@ -27,8 +27,12 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
     private double mouseSensitivity = 0.001; // Default mouse sensitivity
     private int rayResolution = 1; // Default ray resolution
     private int targetFOV = 60; // Target FOV
+    private SoundManager soundManager;//used for addding a sound manager
+
 
     public Game() {
+        soundManager = new SoundManager();
+    soundManager.playMusic("Rays_2d_SoftDev-main/sounds/background-music2.wav");
         String[] options = {"Create New Level", "Load Existing Level"};
         int choice = JOptionPane.showOptionDialog(
                 null,
