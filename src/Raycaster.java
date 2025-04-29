@@ -1,11 +1,9 @@
 import java.awt.*;
 import java.awt.image.*;
-import java.awt.TexturePaint;
 import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 import java.awt.geom.AffineTransform;
-import java.awt.image.AffineTransformOp;
 import java.util.stream.IntStream;
 
 
@@ -45,11 +43,11 @@ public class Raycaster {
         // Lazy load and scale textures only once
         if (wallTexture == null) {
             try {
-                BufferedImage rawWall  = ImageIO.read(new File("textures/brick3.jpg"));
-                BufferedImage rawFloor = ImageIO.read(new File("textures/floor.jpg"));
+                BufferedImage rawWall  = ImageIO.read(new File("Rays_2d_SoftDev-main/textures/brick3.jpg"));
+                BufferedImage rawFloor = ImageIO.read(new File("Rays_2d_SoftDev-main/textures/floor.jpg"));
                 wallTexture  = scaleTexture(rawWall, TEXTURE_SCALE);
                 floorTexture = scaleTexture(rawFloor, TEXTURE_SCALE);
-                skyTexture   = ImageIO.read(new File("textures/sky1.jpg"));
+                skyTexture   = ImageIO.read(new File("Rays_2d_SoftDev-main/textures/sky1.jpg"));
             } catch (IOException e) {
                 System.err.println("❌ Texture load error:");
                 e.printStackTrace();
