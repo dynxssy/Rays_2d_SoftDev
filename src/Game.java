@@ -30,6 +30,12 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
     private SoundManager soundManager; // Used for adding a sound manager
 
     public Game() {
+        try {
+            TextureLoader.loadTextures();
+        } catch (Exception e) {
+            System.err.println("❌ Error loading textures. Using default textures.");
+        }
+
         soundManager = new SoundManager();
         soundManager.playMusic("Rays_2d_SoftDev-main/sounds/background-music2.wav"); // Fixed indentation
         String[] options = {"Create New Level", "Load Existing Level"};
