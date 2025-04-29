@@ -17,9 +17,9 @@ public class Raycaster {
     private int screenWidth, screenHeight;
     private int fov, rayResolution;
 
-    private BufferedImage wallTexture;
-    private BufferedImage floorTexture;
-    private BufferedImage skyTexture;
+    private static BufferedImage wallTexture;
+    private static BufferedImage floorTexture;
+    private static BufferedImage skyTexture;
     private BufferedImage image;
 
     public Raycaster(char[][] map, int mapWidth, int mapHeight,
@@ -37,15 +37,18 @@ public class Raycaster {
         this.fov = fov;
         this.rayResolution = rayResolution;
 
-        try {
-            BufferedImage rawWall  = ImageIO.read(new File("Rays_2d_SoftDev-main/textures/brick4200x.jpg"));
-            BufferedImage rawFloor = ImageIO.read(new File("Rays_2d_SoftDev-main/textures/floor.jpg"));
-            wallTexture  = scaleTexture(rawWall, TEXTURE_SCALE);
-            floorTexture = scaleTexture(rawFloor, TEXTURE_SCALE);
-            skyTexture   = ImageIO.read(new File("Rays_2d_SoftDev-main/textures/sky1.jpg"));
-        } catch (IOException e) {
-            System.err.println("❌ Texture load error:");
-            e.printStackTrace();
+        // Lazy load and scale textures only once
+        if (wallTexture == null) {
+            try {
+                BufferedImage rawWall  = ImageIO.read(new File("textures/brick3.jpg"));
+                BufferedImage rawFloor = ImageIO.read(new File("textures/floor.jpg"));
+                wallTexture  = scaleTexture(rawWall, TEXTURE_SCALE);
+                floorTexture = scaleTexture(rawFloor, TEXTURE_SCALE);
+                skyTexture   = ImageIO.read(new File("textures/sky1.jpg"));
+            } catch (IOException e) {
+                System.err.println("❌ Texture load error:");
+                e.printStackTrace();
+            }
         }
 
         image = new BufferedImage(screenWidth, screenHeight, BufferedImage.TYPE_INT_RGB);
@@ -62,8 +65,9 @@ public class Raycaster {
 
     public BufferedImage castRays() {
         Graphics2D g2d = image.createGraphics();
+        // Use nearest neighbor to speed up
         g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
 
         // Draw sky using TexturePaint for easy horizontal scrolling and tiling
         int skyH = screenHeight / 2;
@@ -83,10 +87,6 @@ public class Raycaster {
             g2d.fillRect(0, 0, screenWidth, skyH);
             g2d.setPaint(Color.BLACK);
         }
-
-        // Cache floor texture dims
-        int floorTexW = (floorTexture != null ? floorTexture.getWidth() : 0);
-        int floorTexH = (floorTexture != null ? floorTexture.getHeight() : 0);
 
         // Ray casting for walls and floors
         for (int x = 0; x < screenWidth; x += rayResolution) {
@@ -127,10 +127,14 @@ public class Raycaster {
             double wallX = ((side == 0) ? playerY + dist * dy : playerX + dist * dx) % 1.0;
             int texX = (int)(wallX * wallTexture.getWidth());
 
+            // Draw wall slice across rayResolution columns
             for (int y = yStart; y < yEnd; y++) {
                 double sample = (double)(y - yStart) / lineH;
                 int texY = (int)(sample * wallTexture.getHeight());
-                image.setRGB(x, y, wallTexture.getRGB(texX, texY));
+                int col = wallTexture.getRGB(texX, texY);
+                for (int rx = 0; rx < rayResolution; rx++) {
+                    if (x + rx < screenWidth) image.setRGB(x + rx, y, col);
+                }
             }
 
             // Draw floor slice
@@ -146,19 +150,20 @@ public class Raycaster {
                     if (t == 'T') floorColor = new Color(0, 0, 255);
                     else if (t == 'E') floorColor = new Color(255, 0, 0);
                     else if (t == 'R') floorColor = new Color(255, 0, 255);
-                    else if (floorTexture != null) {
-                        int tx = Math.min(floorTexW - 1, Math.max(0, (int)((fx - cx) * floorTexW)));
-                        int ty = Math.min(floorTexH - 1, Math.max(0, (int)((fy - cy) * floorTexH)));
+                    else {
+                        int tx = Math.min(floorTexture.getWidth() - 1, Math.max(0, (int)((fx - cx) * floorTexture.getWidth())));
+                        int ty = Math.min(floorTexture.getHeight() - 1, Math.max(0, (int)((fy - cy) * floorTexture.getHeight())));
                         floorColor = new Color(floorTexture.getRGB(tx, ty));
-                    } else {
-                        floorColor = Color.GRAY;
                     }
                 } else {
                     int shade = Math.max(0, Math.min(255,
                             (int)(1 + 205.0 * (y - screenHeight / 2) / (screenHeight / 2))));
                     floorColor = new Color(shade, shade, shade);
                 }
-                image.setRGB(x, y, floorColor.getRGB());
+                int colF = floorColor.getRGB();
+                for (int rx = 0; rx < rayResolution; rx++) {
+                    if (x + rx < screenWidth) image.setRGB(x + rx, y, colF);
+                }
             }
         }
 

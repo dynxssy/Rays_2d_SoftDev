@@ -8,7 +8,7 @@ public class TextureLoader {
 
     public static void loadTextures() {
         try {
-            wallTexture = ImageIO.read(new File("Rays_2d_SoftDev-main/src/textures/brick.png"));
+            wallTexture = ImageIO.read(new File("textures/brick3.jpg"));
         } catch (IOException e) {
             e.printStackTrace();
         }

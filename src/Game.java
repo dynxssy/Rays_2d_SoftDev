@@ -25,14 +25,14 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
     private boolean isMouseCentered = true; // Track mouse centering state
     private int fov = 60; // Default FOV
     private double mouseSensitivity = 0.001; // Default mouse sensitivity
-    private int rayResolution = 1; // Default ray resolution
+    private int rayResolution = 2; // Default ray resolution (increased to reduce rays by half)
     private int targetFOV = 60; // Target FOV
     private SoundManager soundManager;//used for addding a sound manager
 
 
     public Game() {
         soundManager = new SoundManager();
-    soundManager.playMusic("Rays_2d_SoftDev-main/sounds/background-music2.wav");
+        soundManager.playMusic("sounds/background-music2.wav");
         String[] options = {"Create New Level", "Load Existing Level"};
         int choice = JOptionPane.showOptionDialog(
                 null,
@@ -138,15 +138,13 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
         Point center = new Point(getWidth() / 2, getHeight() / 2);
         lastMouseX = center.x;
 
-        // Game loop
+        // Frame timing for FPS cap and measurement
+        final long targetFrameTime = 1_000_000_000L / 60; // nanoseconds per frame for 60 FPS
+        lastTime = System.nanoTime();
+        frames = 0;
+
         while (true) {
-            long now = System.nanoTime();
-            frames++;
-            if (now - lastTime >= 1_000_000_000) { // Update FPS every second
-                fps = frames;
-                frames = 0;
-                lastTime = now;
-            }
+            long frameStart = System.nanoTime();
 
             processInput();
             player.update(map);
@@ -166,7 +164,26 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
 
             smoothFOVTransition();
             render();
-            recenterMouse(); // Recenter the mouse after each frame
+            recenterMouse();
+
+            // Update FPS counter
+            long now = System.nanoTime();
+            frames++;
+            if (now - lastTime >= 1_000_000_000L) {
+                fps = frames;
+                frames = 0;
+                lastTime = now;
+            }
+
+            // Sleep to cap frame rate
+            long frameTime = now - frameStart;
+            if (frameTime < targetFrameTime) {
+                try {
+                    Thread.sleep((targetFrameTime - frameTime) / 1_000_000L);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
         }
     }
 
@@ -290,7 +307,6 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
 
     public void adjustFOV(int delta) {
         fov = Math.max(30, Math.min(120, fov + delta)); // Clamp FOV between 30 and 120
-        renderer.updateFOV(fov); // Ensure renderer updates with new FOV
     }
 
     public double getMouseSensitivity() {
@@ -307,7 +323,6 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
 
     public void adjustRayResolution(int delta) {
         rayResolution = Math.max(1, rayResolution + delta); // Clamp resolution
-        renderer.updateRayResolution(rayResolution); // Ensure renderer updates with new resolution
     }
 
     public void exitToMapSelection() {
@@ -322,7 +337,6 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
         } else if (fov > targetFOV) {
             fov--;
         }
-        renderer.updateFOV(fov);
     }
 
     @Override
