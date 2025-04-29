@@ -38,17 +38,42 @@ public class Raycaster {
         this.rayResolution = rayResolution;
 
         try {
-            BufferedImage rawWall  = ImageIO.read(new File("Rays_2d_SoftDev-main/textures/brick4200x.jpg"));
-            BufferedImage rawFloor = ImageIO.read(new File("Rays_2d_SoftDev-main/textures/floor.jpg"));
-            wallTexture  = scaleTexture(rawWall, TEXTURE_SCALE);
-            floorTexture = scaleTexture(rawFloor, TEXTURE_SCALE);
-            skyTexture   = ImageIO.read(new File("Rays_2d_SoftDev-main/textures/sky1.jpg"));
+            wallTexture = loadTexture("Rays_2d_SoftDev-main/textures/brick4200x.jpg");
         } catch (IOException e) {
-            System.err.println("❌ Texture load error:");
-            e.printStackTrace();
+            System.err.println("Failed to load wall texture. Using default texture.");
+            wallTexture = createDefaultTexture();
+        }
+
+        try {
+            floorTexture = loadTexture("Rays_2d_SoftDev-main/textures/floor.jpg");
+        } catch (IOException e) {
+            System.err.println("Failed to load floor texture. Using default texture.");
+            floorTexture = createDefaultTexture();
+        }
+
+        try {
+            skyTexture = loadTexture("Rays_2d_SoftDev-main/textures/sky1.jpg");
+        } catch (IOException e) {
+            System.err.println("Failed to load sky texture. Using default texture.");
+            skyTexture = createDefaultTexture();
         }
 
         image = new BufferedImage(screenWidth, screenHeight, BufferedImage.TYPE_INT_RGB);
+    }
+
+    private BufferedImage loadTexture(String path) throws IOException {
+        return ImageIO.read(new File(path));
+    }
+
+    private BufferedImage createDefaultTexture() {
+        BufferedImage defaultTexture = new BufferedImage(64, 64, BufferedImage.TYPE_INT_RGB);
+        for (int y = 0; y < 64; y++) {
+            for (int x = 0; x < 64; x++) {
+                int color = (x / 8 % 2 == y / 8 % 2) ? 0xFFFFFF : 0xAAAAAA; // Checkerboard pattern
+                defaultTexture.setRGB(x, y, color);
+            }
+        }
+        return defaultTexture;
     }
 
     private BufferedImage scaleTexture(BufferedImage orig, double scale) {
