@@ -10,9 +10,7 @@ public class MapEditor extends JFrame {
     private Game game;
     private boolean spawnPointSet = false;
     private int spawnX = -1, spawnY = -1;
-    private boolean spawnPointBrushActive = false;
-    private boolean trapBrushActive = false;
-    private boolean endgameTrapBrushActive = false;
+    private String selectedBrush = "Wall"; // Default brush type
 
     public MapEditor(Map map, Game game) {
         this.map = map;
@@ -27,40 +25,24 @@ public class MapEditor extends JFrame {
 
         JPanel buttonPanel = new JPanel();
 
+        // Brush chooser dropdown
+        JComboBox<String> brushChooser = new JComboBox<>(new String[]{"Wall", "Spawn Point", "FOV Trap", "Endgame Trap", "Erase"});
+        brushChooser.addActionListener(e -> selectedBrush = (String) brushChooser.getSelectedItem());
+        buttonPanel.add(new JLabel("Brush:"));
+        buttonPanel.add(brushChooser);
+
+        // Save button
         JButton saveButton = new JButton("Save Level");
         saveButton.addActionListener(e -> saveLevel());
         buttonPanel.add(saveButton);
 
-        JButton spawnPointButton = new JButton("Spawn Point Brush");
-        spawnPointButton.addActionListener(e -> {
-            spawnPointBrushActive = !spawnPointBrushActive; // Toggle the brush mode
-            trapBrushActive = false;
-            endgameTrapBrushActive = false;
-            spawnPointButton.setText(spawnPointBrushActive ? "Brush: ON" : "Brush: OFF");
+        // Proceed button
+        JButton proceedButton = new JButton("Proceed");
+        proceedButton.addActionListener(e -> {
+            JOptionPane.showMessageDialog(this, "Proceeding to the next step...");
+            dispose(); // Close the editor
         });
-        buttonPanel.add(spawnPointButton);
-
-        JButton trapButton = new JButton("FOV Trap Brush");
-        trapButton.addActionListener(e -> {
-            trapBrushActive = !trapBrushActive;
-            spawnPointBrushActive = false;
-            endgameTrapBrushActive = false;
-            trapButton.setText(trapBrushActive ? "Brush: ON" : "Brush: OFF");
-        });
-        buttonPanel.add(trapButton);
-
-        JButton endgameTrapButton = new JButton("Endgame Trap Brush");
-        endgameTrapButton.addActionListener(e -> {
-            endgameTrapBrushActive = !endgameTrapBrushActive;
-            trapBrushActive = false;
-            spawnPointBrushActive = false;
-            endgameTrapButton.setText(endgameTrapBrushActive ? "Brush: ON" : "Brush: OFF");
-        });
-        buttonPanel.add(endgameTrapButton);
-
-        JButton exitButton = new JButton("Exit");
-        exitButton.addActionListener(e -> dispose());
-        buttonPanel.add(exitButton);
+        buttonPanel.add(proceedButton);
 
         add(buttonPanel, BorderLayout.SOUTH);
     }
@@ -123,9 +105,6 @@ public class MapEditor extends JFrame {
 
     private class MapPanel extends JPanel {
         private final int tileSize = 30;
-        private boolean isDragging = false; // Track if the mouse is being dragged
-        private boolean isErasing = false; // Track if the right mouse button is used
-        private Image wallTexture = new ImageIcon("/Users/dynxsy/Rays_2d_SoftDev-1/textures/wall_stone.jpg").getImage();
 
         public MapPanel() {
             addMouseListener(new MouseAdapter() {
@@ -134,53 +113,34 @@ public class MapEditor extends JFrame {
                     int x = e.getX() / tileSize;
                     int y = e.getY() / tileSize;
 
-                    if (spawnPointBrushActive) {
-                        if (map.getTile(x, y) != '1') { // Allow setting spawn point on any non-wall tile
-                            if (spawnPointSet) {
-                                map.getMapLayout()[spawnY][spawnX] = '0'; // Clear previous spawn point
+                    switch (selectedBrush) {
+                        case "Wall":
+                            paintTile(x, y, '1');
+                            break;
+                        case "Spawn Point":
+                            if (map.getTile(x, y) != '1') {
+                                if (spawnPointSet) {
+                                    map.getMapLayout()[spawnY][spawnX] = '0'; // Clear previous spawn point
+                                }
+                                spawnX = x;
+                                spawnY = y;
+                                spawnPointSet = true;
+                                map.getMapLayout()[y][x] = 'S'; // Mark spawn point
+                                if (game != null) {
+                                    game.setSpawnPoint(x + 0.5, y + 0.5);
+                                }
+                                repaint();
                             }
-                            spawnX = x;
-                            spawnY = y;
-                            spawnPointSet = true;
-                            map.getMapLayout()[y][x] = 'S'; // Mark the spawn point in the map layout
-                            if (game != null) {
-                                game.setSpawnPoint(x + 0.5, y + 0.5); // Set spawn point only if game is not null
-                            }
-                            repaint();
-                        }
-                    } else if (trapBrushActive) {
-                        paintTile(x, y, 'T'); // Paint trap
-                    } else if (endgameTrapBrushActive) {
-                        paintTile(x, y, 'E');
-                    } else if (SwingUtilities.isLeftMouseButton(e)) {
-                        isDragging = true;
-                        isErasing = false;
-                        paintTile(x, y, '1'); // Paint wall
-                    } else if (SwingUtilities.isRightMouseButton(e)) {
-                        isDragging = true;
-                        isErasing = true;
-                        paintTile(x, y, '0'); // Erase wall
-                    }
-                }
-
-                @Override
-                public void mouseReleased(MouseEvent e) {
-                    isDragging = false; // Stop dragging when the mouse is released
-                }
-            });
-
-            addMouseMotionListener(new MouseMotionAdapter() {
-                @Override
-                public void mouseDragged(MouseEvent e) {
-                    if (isDragging) {
-                        int x = e.getX() / tileSize;
-                        int y = e.getY() / tileSize;
-
-                        if (isErasing) {
-                            paintTile(x, y, '0'); // Erase wall
-                        } else {
-                            paintTile(x, y, '1'); // Paint wall
-                        }
+                            break;
+                        case "FOV Trap":
+                            paintTile(x, y, 'T');
+                            break;
+                        case "Endgame Trap":
+                            paintTile(x, y, 'E');
+                            break;
+                        case "Erase":
+                            paintTile(x, y, '0');
+                            break;
                     }
                 }
             });
