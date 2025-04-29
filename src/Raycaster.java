@@ -6,21 +6,26 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
+import java.util.stream.IntStream;
 
 
 public class Raycaster {
     private static final double TEXTURE_SCALE = 0.2;
-
     private char[][] map;
     private int mapWidth, mapHeight;
     private double playerX, playerY, playerAngle;
     private int screenWidth, screenHeight;
+    @SuppressWarnings("unused")
     private int fov, rayResolution;
 
     private static BufferedImage wallTexture;
     private static BufferedImage floorTexture;
     private static BufferedImage skyTexture;
     private BufferedImage image;
+    private int[] pixels;
+
+    private double[] offsetCos, offsetSin;
+    private int prevFov = -1, prevRes = -1;
 
     public Raycaster(char[][] map, int mapWidth, int mapHeight,
                      double playerX, double playerY, double playerAngle,
@@ -52,6 +57,7 @@ public class Raycaster {
         }
 
         image = new BufferedImage(screenWidth, screenHeight, BufferedImage.TYPE_INT_RGB);
+        pixels = ((DataBufferInt)image.getRaster().getDataBuffer()).getData();
     }
 
     private BufferedImage scaleTexture(BufferedImage orig, double scale) {
@@ -88,12 +94,16 @@ public class Raycaster {
             g2d.setPaint(Color.BLACK);
         }
 
-        // Ray casting for walls and floors
-        for (int x = 0; x < screenWidth; x += rayResolution) {
-            double rayAngle = playerAngle - Math.toRadians(fov/2)
-                    + Math.toRadians(fov) * x / screenWidth;
-            double dx = Math.cos(rayAngle);
-            double dy = Math.sin(rayAngle);
+        // Prepare rotation factors
+        double cosA = Math.cos(playerAngle);
+        double sinA = Math.sin(playerAngle);
+
+        // Parallel ray loops via streams
+        int count = offsetCos.length;
+        IntStream.range(0, count).parallel().forEach(i -> {
+            int x = i * rayResolution;
+            double dx = offsetCos[i] * cosA - offsetSin[i] * sinA;
+            double dy = offsetSin[i] * cosA + offsetCos[i] * sinA;
 
             // DDA initialization
             double deltaX = dx == 0 ? 1e30 : Math.abs(1 / dx);
@@ -133,7 +143,8 @@ public class Raycaster {
                 int texY = (int)(sample * wallTexture.getHeight());
                 int col = wallTexture.getRGB(texX, texY);
                 for (int rx = 0; rx < rayResolution; rx++) {
-                    if (x + rx < screenWidth) image.setRGB(x + rx, y, col);
+                    int px = x + rx;
+                    if (px < screenWidth) pixels[y * screenWidth + px] = col;
                 }
             }
 
@@ -162,12 +173,41 @@ public class Raycaster {
                 }
                 int colF = floorColor.getRGB();
                 for (int rx = 0; rx < rayResolution; rx++) {
-                    if (x + rx < screenWidth) image.setRGB(x + rx, y, colF);
+                    int px = x + rx;
+                    if (px < screenWidth) pixels[y * screenWidth + px] = colF;
                 }
             }
-        }
+        });
 
         g2d.dispose();
         return image;
+    }
+
+    // Add update methods for dynamic fields
+    public void updatePlayer(double x, double y, double angle) {
+        this.playerX = x;
+        this.playerY = y;
+        this.playerAngle = angle;
+    }
+
+    public void updateSettings(int fov, int rayResolution) {
+        // Rebuild angle offset caches only when fov or resolution change
+        if (fov != prevFov || rayResolution != prevRes || offsetCos == null) {
+            this.fov = fov;
+            this.rayResolution = rayResolution;
+            prevFov = fov;
+            prevRes = rayResolution;
+            int count = (screenWidth + rayResolution - 1) / rayResolution;
+            offsetCos = new double[count];
+            offsetSin = new double[count];
+            double radFov = Math.toRadians(fov);
+            double half = radFov / 2;
+            for (int i = 0; i < count; i++) {
+                int px = i * rayResolution;
+                double offset = -half + radFov * px / screenWidth;
+                offsetCos[i] = Math.cos(offset);
+                offsetSin[i] = Math.sin(offset);
+            }
+        }
     }
 }

@@ -172,6 +172,14 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
             if (now - lastTime >= 1_000_000_000L) {
                 fps = frames;
                 frames = 0;
+                 // Dynamic resolution scaling: adjust rayResolution to keep FPS around target range
+                int targetFpsLow = 50;
+                int targetFpsHigh = 58;
+                if (fps < targetFpsLow) {
+                    adjustRayResolution(1); // lower quality to boost performance
+                } else if (fps > targetFpsHigh) {
+                    adjustRayResolution(-1); // increase quality if performance allows
+                }
                 lastTime = now;
             }
 
