@@ -27,12 +27,11 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
     private double mouseSensitivity = 0.001; // Default mouse sensitivity
     private int rayResolution = 1; // Default ray resolution
     private int targetFOV = 60; // Target FOV
-    private SoundManager soundManager;//used for addding a sound manager
-
+    private SoundManager soundManager; // Used for adding a sound manager
 
     public Game() {
         soundManager = new SoundManager();
-    soundManager.playMusic("Rays_2d_SoftDev-main/sounds/background-music2.wav");
+        soundManager.playMusic("Rays_2d_SoftDev-main/sounds/background-music2.wav"); // Fixed indentation
         String[] options = {"Create New Level", "Load Existing Level"};
         int choice = JOptionPane.showOptionDialog(
                 null,
@@ -90,6 +89,11 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
         }
 
         File[] levelFiles = levelsDir.listFiles((dir, name) -> name.endsWith(".txt"));
+        if (levelFiles == null || levelFiles.length == 0) { // Added null/empty check for safety
+            JOptionPane.showMessageDialog(null, "No levels found. Create a new level first.");
+            return false;
+        }
+
         String[] levelNames = new String[levelFiles.length];
         for (int i = 0; i < levelFiles.length; i++) {
             levelNames[i] = levelFiles[i].getName().replace(".txt", "");
@@ -212,7 +216,7 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
             for (int x = 0; x < map.getWidth(); x++) {
                 char tile = map.getTile(x, y);
                 if (map.isWall(x, y)) {
-                    // Wall (optional color)
+                    g.setColor(Color.DARK_GRAY); // Wall color (added default color)
                 } else if (tile == 'T') {
                     g.setColor(Color.BLUE);
                 } else if (tile == 'E') {
@@ -264,8 +268,6 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
         g.setColor(Color.BLACK);
         for (Point point : rayEndPoints) {
             g.fillOval(point.x - 1, point.y - 1, 2, 2); // Draw a small black dot
-
-
         }
     }
 
