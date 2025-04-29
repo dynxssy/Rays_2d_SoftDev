@@ -1,12 +1,12 @@
 import javax.sound.sampled.*;
 import java.io.File;
-import java.io.IOException;
 
 public class SoundManager {
     private Clip clip;
 
     public void playMusic(String filePath) {
         try {
+            stopMusic(); // Stop any currently playing music
             File musicFile = new File(filePath);  // Load music file
             AudioInputStream audioStream = AudioSystem.getAudioInputStream(musicFile);  // Get the audio stream
             clip = AudioSystem.getClip();  // Get a clip to play the music

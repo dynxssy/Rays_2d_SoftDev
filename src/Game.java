@@ -85,6 +85,51 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
         }
     }
 
+    public Game(String levelName) {
+        soundManager = new SoundManager();
+        soundManager.playMusic("sounds/background-music2.wav");
+
+        File levelFile = new File("levels", levelName + ".txt");
+        try {
+            List<String> lines = Files.readAllLines(levelFile.toPath());
+            char[][] layout = new char[lines.size()][lines.get(0).length()];
+            for (int y = 0; y < lines.size(); y++) {
+                for (int x = 0; x < lines.get(y).length(); x++) {
+                    char tile = lines.get(y).charAt(x);
+                    if (tile == 'P') {
+                        player = new Player(x + 0.5, y + 0.5, 0); // Set spawn point
+                        layout[y][x] = '0'; // Replace spawn point with empty space
+                    } else {
+                        layout[y][x] = tile;
+                    }
+                }
+            }
+            map = new Map(layout);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null, "Failed to load level: " + e.getMessage());
+            System.exit(0);
+        }
+
+        // Reset key states
+        keys = new boolean[256];
+
+        renderer = new Renderer(this, map, player);
+        hud = new HUD(player, this);
+        addKeyListener(this);
+        addMouseMotionListener(this);
+        setFocusable(true);
+
+        try {
+            robot = new Robot();
+        } catch (AWTException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("Initializing game with level: " + levelName);
+        System.out.println("Player spawn point: (" + player.getX() + ", " + player.getY() + ")");
+        System.out.println("Map dimensions: " + map.getWidth() + "x" + map.getHeight());
+    }
+
     private boolean loadLevel() {
         File levelsDir = new File("levels");
         if (!levelsDir.exists() || levelsDir.listFiles() == null) {
@@ -135,7 +180,7 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
         return true;
     }
 
-    public void start() {
+    public double start() {
         // Center the mouse cursor
         Toolkit.getDefaultToolkit().getBestCursorSize(1, 1);
         Point center = new Point(getWidth() / 2, getHeight() / 2);
@@ -165,7 +210,7 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
                 double elapsedSec = (endTime - timerStart) / 1_000_000_000.0;
                 String timeStr = String.format("%.2f", elapsedSec);
                 JOptionPane.showMessageDialog(null, "Level completed in " + timeStr + " seconds!");
-                System.exit(0);
+                return elapsedSec;
             }
 
             smoothFOVTransition();
@@ -206,12 +251,25 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
         if (!timerStarted && (keys[KeyEvent.VK_W] || keys[KeyEvent.VK_S] || keys[KeyEvent.VK_A] || keys[KeyEvent.VK_D])) {
             timerStart = System.nanoTime();
             timerStarted = true;
+            System.out.println("Timer started.");
         }
         player.setSpeedBoost(keys[KeyEvent.VK_SHIFT]); // Boost speed on shift
-        if (keys[KeyEvent.VK_W]) player.moveForward(map);
-        if (keys[KeyEvent.VK_S]) player.moveBackward(map);
-        if (keys[KeyEvent.VK_A]) player.strafeLeft(map); // Strafe left
-        if (keys[KeyEvent.VK_D]) player.strafeRight(map); // Strafe right
+        if (keys[KeyEvent.VK_W]) {
+            System.out.println("Moving forward.");
+            player.moveForward(map);
+        }
+        if (keys[KeyEvent.VK_S]) {
+            System.out.println("Moving backward.");
+            player.moveBackward(map);
+        }
+        if (keys[KeyEvent.VK_A]) {
+            System.out.println("Strafing left.");
+            player.strafeLeft(map);
+        }
+        if (keys[KeyEvent.VK_D]) {
+            System.out.println("Strafing right.");
+            player.strafeRight(map);
+        }
     }
 
     private void render() {
@@ -361,11 +419,13 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
     @Override
     public void keyPressed(KeyEvent e) {
         keys[e.getKeyCode()] = true;
+        System.out.println("Key pressed: " + KeyEvent.getKeyText(e.getKeyCode()));
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
         keys[e.getKeyCode()] = false;
+        System.out.println("Key released: " + KeyEvent.getKeyText(e.getKeyCode()));
     }
 
     @Override

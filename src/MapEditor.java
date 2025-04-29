@@ -13,6 +13,11 @@ public class MapEditor extends JFrame {
     private boolean spawnPointBrushActive = false;
     private boolean trapBrushActive = false;
     private boolean endgameTrapBrushActive = false;
+    private String levelName;
+
+    public String getLevelName() {
+        return levelName;
+    }
 
     public MapEditor(Map map, Game game) {
         this.map = map;
@@ -75,7 +80,7 @@ public class MapEditor extends JFrame {
             return;
         }
 
-        String levelName = JOptionPane.showInputDialog(this, "Enter level name:");
+        levelName = JOptionPane.showInputDialog(this, "Enter level name:");
         if (levelName == null || levelName.trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Level name cannot be empty.");
             return;
