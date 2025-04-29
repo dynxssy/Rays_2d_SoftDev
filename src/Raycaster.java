@@ -1,14 +1,14 @@
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.awt.image.*;
 import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
-import java.awt.geom.AffineTransform;
-import java.util.stream.IntStream;
-
 
 public class Raycaster {
-    private static final double TEXTURE_SCALE = 0.2;
+    // Use full-resolution textures
+    private static final double TEXTURE_SCALE = 1.0;
+
     private char[][] map;
     private int mapWidth, mapHeight;
     private double playerX, playerY, playerAngle;
@@ -40,7 +40,7 @@ public class Raycaster {
         this.fov = fov;
         this.rayResolution = rayResolution;
 
-        // Lazy load and scale textures only once
+        // Load full-res textures once
         if (wallTexture == null) {
             try {
                 BufferedImage rawWall  = ImageIO.read(new File("Rays_2d_SoftDev-main/textures/brick3.jpg"));
@@ -55,12 +55,12 @@ public class Raycaster {
         }
 
         image = new BufferedImage(screenWidth, screenHeight, BufferedImage.TYPE_INT_RGB);
-        pixels = ((DataBufferInt)image.getRaster().getDataBuffer()).getData();
+        pixels = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
     }
 
     private BufferedImage scaleTexture(BufferedImage orig, double scale) {
-        int w = (int)(orig.getWidth() * scale);
-        int h = (int)(orig.getHeight() * scale);
+        int w = (int) (orig.getWidth() * scale);
+        int h = (int) (orig.getHeight() * scale);
         BufferedImage buff = new BufferedImage(w, h, orig.getType());
         AffineTransform at = AffineTransform.getScaleInstance(scale, scale);
         AffineTransformOp op = new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
@@ -69,25 +69,27 @@ public class Raycaster {
 
     public BufferedImage castRays() {
         Graphics2D g2d = image.createGraphics();
-        // Use nearest neighbor to speed up
-        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
 
-        // Draw sky using TexturePaint for easy horizontal scrolling and tiling
+        // (1) High-quality rendering hints
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                             RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g2d.setRenderingHint(RenderingHints.KEY_RENDERING,
+                             RenderingHints.VALUE_RENDER_QUALITY);
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                             RenderingHints.VALUE_ANTIALIAS_ON);
+
+        // Draw sky
         int skyH = screenHeight / 2;
         if (skyTexture != null) {
             int texW = skyTexture.getWidth();
-            // compute scroll offset based on player angle
             float offsetX = (float)((playerAngle / (2 * Math.PI)) * texW) % texW;
             if (offsetX < 0) offsetX += texW;
-            Rectangle anchor = new Rectangle((int)-offsetX, 0, texW, skyH);
-            TexturePaint skyPaint = new TexturePaint(skyTexture, anchor);
+            TexturePaint skyPaint = new TexturePaint(skyTexture, new Rectangle((int)-offsetX, 0, texW, skyH));
             g2d.setPaint(skyPaint);
             g2d.fillRect(0, 0, screenWidth, skyH);
-            // reset paint to default
             g2d.setPaint(Color.BLACK);
         } else {
-            g2d.setPaint(new Color(135, 206, 235));
+            g2d.setColor(new Color(135, 206, 235));
             g2d.fillRect(0, 0, screenWidth, skyH);
             g2d.setPaint(Color.BLACK);
         }
@@ -96,9 +98,12 @@ public class Raycaster {
         double cosA = Math.cos(playerAngle);
         double sinA = Math.sin(playerAngle);
 
-        // Parallel ray loops via streams
+        // Rebuild offsets if needed
+        updateSettings(fov, rayResolution);
         int count = offsetCos.length;
-        IntStream.range(0, count).parallel().forEach(i -> {
+
+        // Raycast loop
+        for (int i = 0; i < count; i++) {
             int x = i * rayResolution;
             double dx = offsetCos[i] * cosA - offsetSin[i] * sinA;
             double dy = offsetSin[i] * cosA + offsetCos[i] * sinA;
@@ -106,47 +111,52 @@ public class Raycaster {
             // DDA initialization
             double deltaX = dx == 0 ? 1e30 : Math.abs(1 / dx);
             double deltaY = dy == 0 ? 1e30 : Math.abs(1 / dy);
-            int mapX = (int)playerX;
-            int mapY = (int)playerY;
-            int stepX = dx < 0 ? -1 : 1;
-            int stepY = dy < 0 ? -1 : 1;
+            int mapX = (int) playerX, mapY = (int) playerY;
+            int stepX = dx < 0 ? -1 : 1, stepY = dy < 0 ? -1 : 1;
             double sideX = dx < 0 ? (playerX - mapX) * deltaX : (mapX + 1 - playerX) * deltaX;
             double sideY = dy < 0 ? (playerY - mapY) * deltaY : (mapY + 1 - playerY) * deltaY;
 
             boolean hit = false;
             int side = 0;
             while (!hit) {
-                if (sideX < sideY) { sideX += deltaX; mapX += stepX; side = 0; }
-                else               { sideY += deltaY; mapY += stepY; side = 1; }
-                if (mapX < 0 || mapX >= mapWidth
-                        || mapY < 0 || mapY >= mapHeight
-                        || map[mapY][mapX] == '1') hit = true;
-            }
-
-            double dist = (side == 0)
-                    ? (mapX - playerX + (1 - stepX) / 2) / dx
-                    : (mapY - playerY + (1 - stepY) / 2) / dy;
-            dist = Math.max(dist, 1e-4);
-
-            // Draw wall slice
-            int lineH = (int)(screenHeight / dist);
-            int yStart = Math.max(0, (screenHeight - lineH) / 2);
-            int yEnd   = Math.min(screenHeight, (screenHeight + lineH) / 2);
-            double wallX = ((side == 0) ? playerY + dist * dy : playerX + dist * dx) % 1.0;
-            int texX = (int)(wallX * wallTexture.getWidth());
-
-            // Draw wall slice across rayResolution columns
-            for (int y = yStart; y < yEnd; y++) {
-                double sample = (double)(y - yStart) / lineH;
-                int texY = (int)(sample * wallTexture.getHeight());
-                int col = wallTexture.getRGB(texX, texY);
-                for (int rx = 0; rx < rayResolution; rx++) {
-                    int px = x + rx;
-                    if (px < screenWidth) pixels[y * screenWidth + px] = col;
+                if (sideX < sideY) {
+                    sideX += deltaX;
+                    mapX += stepX;
+                    side = 0;
+                } else {
+                    sideY += deltaY;
+                    mapY += stepY;
+                    side = 1;
+                }
+                if (mapX < 0 || mapX >= mapWidth ||
+                    mapY < 0 || mapY >= mapHeight ||
+                    map[mapY][mapX] == '1') {
+                    hit = true;
                 }
             }
 
-            // Draw floor slice
+            // Distance and slice height
+            double dist = (side == 0)
+                        ? (mapX - playerX + (1 - stepX) / 2) / dx
+                        : (mapY - playerY + (1 - stepY) / 2) / dy;
+            dist = Math.max(dist, 1e-4);
+            int lineH = (int)(screenHeight / dist);
+            int yStart = Math.max(0, (screenHeight - lineH) / 2);
+            int yEnd   = Math.min(screenHeight, (screenHeight + lineH) / 2);
+
+            // Calculate texture X
+            double wallX = ((side == 0) ? playerY + dist * dy : playerX + dist * dx) % 1.0;
+            int texX = (int)(wallX * wallTexture.getWidth());
+
+            // (2) Draw wall slice with bilinear filtering
+            g2d.drawImage(
+                wallTexture,
+                /* dst */ x, yStart, x + rayResolution, yEnd,
+                /* src */ texX, 0, texX + 1, wallTexture.getHeight(),
+                null
+            );
+
+            // Draw floor slice (nearest)
             for (int y = yEnd; y < screenHeight; y++) {
                 double floorDist = screenHeight / (2.0 * y - screenHeight);
                 double fx = playerX + dx * floorDist;
@@ -158,38 +168,42 @@ public class Raycaster {
                     char t = map[cy][cx];
                     if (t == 'T') floorColor = new Color(0, 0, 255);
                     else if (t == 'E') floorColor = new Color(255, 0, 0);
-                    else if (t == 'R') floorColor = new Color(255, 0, 255);
                     else {
-                        int tx = Math.min(floorTexture.getWidth() - 1, Math.max(0, (int)((fx - cx) * floorTexture.getWidth())));
-                        int ty = Math.min(floorTexture.getHeight() - 1, Math.max(0, (int)((fy - cy) * floorTexture.getHeight())));
+                        int tx = Math.min(floorTexture.getWidth() - 1,
+                                          Math.max(0, (int)((fx - cx) * floorTexture.getWidth())));
+                        int ty = Math.min(floorTexture.getHeight() - 1,
+                                          Math.max(0, (int)((fy - cy) * floorTexture.getHeight())));
                         floorColor = new Color(floorTexture.getRGB(tx, ty));
                     }
                 } else {
                     int shade = Math.max(0, Math.min(255,
-                            (int)(1 + 205.0 * (y - screenHeight / 2) / (screenHeight / 2))));
+                            (int)(1 + 205.0 * (y - skyH) / skyH)));
                     floorColor = new Color(shade, shade, shade);
                 }
+
                 int colF = floorColor.getRGB();
                 for (int rx = 0; rx < rayResolution; rx++) {
                     int px = x + rx;
-                    if (px < screenWidth) pixels[y * screenWidth + px] = colF;
+                    if (px < screenWidth) {
+                        pixels[y * screenWidth + px] = colF;
+                    }
                 }
             }
-        });
+        }
 
         g2d.dispose();
         return image;
     }
 
-    // Add update methods for dynamic fields
+    // Update player position & angle
     public void updatePlayer(double x, double y, double angle) {
         this.playerX = x;
         this.playerY = y;
         this.playerAngle = angle;
     }
 
+    // Recompute offset arrays when FOV or resolution change
     public void updateSettings(int fov, int rayResolution) {
-        // Rebuild angle offset caches only when fov or resolution change
         if (fov != prevFov || rayResolution != prevRes || offsetCos == null) {
             this.fov = fov;
             this.rayResolution = rayResolution;
@@ -198,8 +212,7 @@ public class Raycaster {
             int count = (screenWidth + rayResolution - 1) / rayResolution;
             offsetCos = new double[count];
             offsetSin = new double[count];
-            double radFov = Math.toRadians(fov);
-            double half = radFov / 2;
+            double radFov = Math.toRadians(fov), half = radFov / 2;
             for (int i = 0; i < count; i++) {
                 int px = i * rayResolution;
                 double offset = -half + radFov * px / screenWidth;
