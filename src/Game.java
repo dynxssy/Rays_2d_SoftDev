@@ -28,6 +28,9 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
     private int rayResolution = 2; // Default ray resolution (increased to reduce rays by half)
     private int targetFOV = 60; // Target FOV
     private SoundManager soundManager;//used for addding a sound manager
+    // Add timer fields
+    private long timerStart;
+    private boolean timerStarted = false;
 
 
     public Game() {
@@ -145,7 +148,6 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
 
         while (true) {
             long frameStart = System.nanoTime();
-
             processInput();
             player.update(map);
 
@@ -158,7 +160,11 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
             }
 
             if (currentTile == 'E') {
-                JOptionPane.showMessageDialog(null, "You stepped on the ENDGAME trap!");
+                // Stop timer and show elapsed time
+                long endTime = System.nanoTime();
+                double elapsedSec = (endTime - timerStart) / 1_000_000_000.0;
+                String timeStr = String.format("%.2f", elapsedSec);
+                JOptionPane.showMessageDialog(null, "Level completed in " + timeStr + " seconds!");
                 System.exit(0);
             }
 
@@ -196,6 +202,11 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
     }
 
     private void processInput() {
+        // Start timer on first movement
+        if (!timerStarted && (keys[KeyEvent.VK_W] || keys[KeyEvent.VK_S] || keys[KeyEvent.VK_A] || keys[KeyEvent.VK_D])) {
+            timerStart = System.nanoTime();
+            timerStarted = true;
+        }
         player.setSpeedBoost(keys[KeyEvent.VK_SHIFT]); // Boost speed on shift
         if (keys[KeyEvent.VK_W]) player.moveForward(map);
         if (keys[KeyEvent.VK_S]) player.moveBackward(map);
