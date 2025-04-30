@@ -38,6 +38,10 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
     // Sprint / stamina (0.0 to 1.0)
     private double stamina = 1.0;
 
+    // Screenshake fields
+    private int shakeDuration = 0; // Duration of the screenshake in frames
+    private int shakeIntensity = 5; // Intensity of the screenshake
+
     public Game() {
         soundManager = new SoundManager();
         soundManager.playMusic("sounds/background-music2.wav");
@@ -170,9 +174,11 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
 
             if (currentTile == 'T') {
                 targetFOV = 120;
+                shakeDuration = 20; // Trigger screenshake for 20 frames
             } else {
                 targetFOV = 60;
             }
+
             if (currentTile == 'V') {
                 JOptionPane.showMessageDialog(null, "You fell into the void. Restarting level...");
                 resetLevelState();
@@ -198,11 +204,8 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
             if (now - lastTime >= 1_000_000_000L) {
                 fps = frames;
                 frames = 0;
-                // ——— DISABLE AUTO-RESOLUTION ADJUSTMENT ———
-                // We leave rayResolution exactly as it was initialized.
                 lastTime = now;
             }
-
 
             long frameTime = now - frameStart;
             if (frameTime < targetFrameTime) {
@@ -249,6 +252,15 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
         BufferStrategy bs = getBufferStrategy();
         if (bs == null) { createBufferStrategy(3); return; }
         Graphics g = bs.getDrawGraphics();
+
+        // Apply screenshake effect
+        if (shakeDuration > 0) {
+            int offsetX = (int) (Math.random() * shakeIntensity * 2 - shakeIntensity);
+            int offsetY = (int) (Math.random() * shakeIntensity * 2 - shakeIntensity);
+            g.translate(offsetX, offsetY);
+            shakeDuration--;
+        }
+
         renderer.render(g);
         hud.render(g, fps);
         renderMiniMap(g);

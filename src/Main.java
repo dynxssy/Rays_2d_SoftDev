@@ -48,7 +48,7 @@ public class Main {
         editor2.open();
         while (editor2.isVisible()) {
             try {
-                Thread.sleep(100);
+                Thread.sleep(100); 
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
