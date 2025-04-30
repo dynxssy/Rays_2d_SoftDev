@@ -1,16 +1,16 @@
 // Player.java
 public class Player {
     private double x, y, angle;
-    private double moveSpeed = 0.01;        // base walk speed
+    private double moveSpeed = 0.02;        // base walk speed
     private boolean isSpeedBoosted = false;
 
     // Stamina fields
-    private double stamina = 100.0;
-    private static final double MAX_STAMINA = 100.0;
-    private static final double DEPLETION_PER_SEC = 30.0;
-    private static final double RECOVERY_PER_SEC  = 15.0;
-    private static final double REGEN_COOLDOWN_TIME = 0.5;  // seconds
-    private double regenCooldownTimer = 0.0;
+    private double stamina = 50.0;
+    private static final double MAX_STAMINA = 50.0;
+    private static final double DEPLETION_PER_SEC = 15.0;
+    private static final double RECOVERY_PER_SEC  = 30.0;
+    private static final double REGEN_COOLDOWN_TIME = 2.5;  // seconds
+    private double regenCooldownTimer = 2.5;
 
     public Player(double x, double y, double angle) {
         this.x = x;
