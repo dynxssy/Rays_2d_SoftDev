@@ -164,6 +164,8 @@ public class Raycaster {
                         floorColor = new Color(255, 0, 0);
                     } else if (t == 'R') {
                         floorColor = new Color(255, 0, 255);
+                    } else if (t == 'V') {
+                        floorColor = Color.BLACK;
                     } else if (t == 'W') {            //  win point
                         floorColor = new Color(255, 255, 0);
                     } else {
