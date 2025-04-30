@@ -24,8 +24,10 @@ public class MapEditor extends JFrame {
 
         JPanel buttonPanel = new JPanel();
 
-        // Brush chooser dropdown
-        JComboBox<String> brushChooser = new JComboBox<>(new String[]{"Wall", "Spawn Point", "FOV Trap", "Endgame Trap", "Erase"});
+        // Brush chooser dropdown (added Win Point)
+        JComboBox<String> brushChooser = new JComboBox<>(new String[]{
+                "Wall", "Spawn Point", "FOV Trap", "Endgame Trap", "Win Point", "Erase"
+        });
         brushChooser.addActionListener(e -> selectedBrush = (String) brushChooser.getSelectedItem());
         buttonPanel.add(new JLabel("Brush:"));
         buttonPanel.add(brushChooser);
@@ -177,6 +179,9 @@ public class MapEditor extends JFrame {
                 case "Endgame Trap":
                     paintTile(x, y, 'E');
                     break;
+                case "Win Point":
+                    paintTile(x, y, 'W');
+                    break;
                 case "Erase":
                     paintTile(x, y, '0');
                     break;
@@ -201,6 +206,7 @@ public class MapEditor extends JFrame {
                         case 'S': g.setColor(Color.GREEN); break;
                         case 'T': g.setColor(Color.BLUE); break;
                         case 'E': g.setColor(Color.RED); break;
+                        case 'W': g.setColor(Color.YELLOW); break; // Win Point
                         default:  g.setColor(Color.LIGHT_GRAY); break;
                     }
                     g.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
