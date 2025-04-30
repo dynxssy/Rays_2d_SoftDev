@@ -181,11 +181,13 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
             long now = System.nanoTime();
             frames++;
             if (now - lastTime >= 1_000_000_000L) {
-                fps = frames; frames = 0;
-                if (fps < 50) adjustRayResolution(1);
-                else if (fps > 58) adjustRayResolution(-1);
+                fps = frames;
+                frames = 0;
+                // ——— DISABLE AUTO-RESOLUTION ADJUSTMENT ———
+                // We leave rayResolution exactly as it was initialized.
                 lastTime = now;
             }
+            
 
             long frameTime = now - frameStart;
             if (frameTime < targetFrameTime) {
