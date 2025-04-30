@@ -22,4 +22,6 @@ public class SoundManager {
             clip.stop();  // Stop the music if it is playing
         }
     }
+
+    
 }
