@@ -204,14 +204,24 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
                 targetFOV = 60;
             }
 
-            if (currentTile == 'E') {
-                // Stop timer and show elapsed time
+// Win‐point handling
+            if (currentTile == 'W') {
                 long endTime = System.nanoTime();
                 double elapsedSec = (endTime - timerStart) / 1_000_000_000.0;
                 String timeStr = String.format("%.2f", elapsedSec);
-                JOptionPane.showMessageDialog(null, "Level completed in " + timeStr + " seconds!");
+                        JOptionPane.showMessageDialog(null, "You win! Completed in " + timeStr + " seconds.");
                 return elapsedSec;
             }
+
+// endgame  tile
+            if (currentTile == 'E') {
+                long endTime = System.nanoTime();
+                double elapsedSec = (endTime - timerStart) / 1_000_000_000.0;
+                String timeStr = String.format("%.2f", elapsedSec);
+                        JOptionPane.showMessageDialog(null, "Level completed in " + timeStr + " seconds!");
+                return elapsedSec;
+            }
+
 
             smoothFOVTransition();
             render();
