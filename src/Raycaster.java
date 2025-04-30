@@ -158,14 +158,23 @@ public class Raycaster {
 
                 if (cx >= 0 && cx < mapWidth && cy >= 0 && cy < mapHeight) {
                     char t = map[cy][cx];
-                    if (t == 'T') floorColor = new Color(0, 0, 255);
-                    else if (t == 'E') floorColor = new Color(255, 0, 0);
-                    else if (t == 'R') floorColor = new Color(255, 0, 255);
-                    else {
-                        int tx = Math.min(floorTexture.getWidth() - 1, Math.max(0, (int)((fx - cx) * floorTexture.getWidth())));
-                        int ty = Math.min(floorTexture.getHeight() - 1, Math.max(0, (int)((fy - cy) * floorTexture.getHeight())));
+                    if (t == 'T') {
+                        floorColor = new Color(0, 0, 255);
+                    } else if (t == 'E') {
+                        floorColor = new Color(255, 0, 0);
+                    } else if (t == 'R') {
+                        floorColor = new Color(255, 0, 255);
+                    } else if (t == 'W') {            //  win point
+                        floorColor = new Color(255, 255, 0);
+                    } else {
+                        // default textured floor
+                        int tx = Math.min(floorTexture.getWidth() - 1,
+                                Math.max(0, (int)((fx - cx) * floorTexture.getWidth())));
+                        int ty = Math.min(floorTexture.getHeight() - 1,
+                                Math.max(0, (int)((fy - cy) * floorTexture.getHeight())));
                         floorColor = new Color(floorTexture.getRGB(tx, ty));
                     }
+
                 } else {
                     int shade = Math.max(0, Math.min(255,
                             (int)(1 + 205.0 * (y - screenHeight / 2) / (screenHeight / 2))));
