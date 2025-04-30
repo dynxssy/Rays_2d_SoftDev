@@ -26,7 +26,7 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
     private boolean isMouseCentered = true;
     private int fov = 60;
     private double mouseSensitivity = 0.001;
-    private int rayResolution = 2;
+    private int rayResolution = 1;
     private int targetFOV = 60;
     private SoundManager soundManager;
 
