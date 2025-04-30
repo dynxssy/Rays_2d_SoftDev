@@ -11,6 +11,8 @@ import java.util.ArrayList;
 
 public class Game extends Canvas implements KeyListener, MouseMotionListener {
     private Player player;
+    private double initialSpawnX;
+    private double initialSpawnY;
     private Map map;
     private Renderer renderer;
     public int dots = 0;
@@ -98,6 +100,8 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
                     char tile = lines.get(y).charAt(x);
                     if (tile == 'P') {
                         player = new Player(x + 0.5, y + 0.5, 0); // Set spawn point
+                        initialSpawnX = x + 0.5;
+                        initialSpawnY = y + 0.5;
                         layout[y][x] = '0'; // Replace spawn point with empty space
                     } else {
                         layout[y][x] = tile;
@@ -203,6 +207,11 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
             } else {
                 targetFOV = 60;
             }
+            if (currentTile == 'V') {
+                JOptionPane.showMessageDialog(null, "You fell into the void. Restarting level...");
+                resetLevelState();
+                continue; // Continue game loop from beginning
+            }
 
 // Win‐point handling
             if (currentTile == 'W') {
@@ -255,6 +264,16 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
             }
         }
     }
+
+    private void resetLevelState() {
+        player = new Player(initialSpawnX, initialSpawnY, 0); // Reset player position and angle
+        hud = new HUD(player, this);                         // Re-initialize HUD
+        renderer = new Renderer(this, map, player);          // Re-initialize renderer
+        timerStarted = false;                                // Reset the timer
+        dots = 0;
+        rayEndPoints.clear();
+    }
+
 
     private void processInput() {
         // Start timer on first movement
