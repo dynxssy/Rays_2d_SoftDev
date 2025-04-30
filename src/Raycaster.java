@@ -169,6 +169,34 @@ public class Raycaster {
                 null
             );
 
+            // Apply darkness effect based on distance
+            float darknessFactor = (float) Math.min(1.0, dist / 15.0); // Adjust 10.0 for desired effect
+            for (int y = yStart; y < yEnd; y++) {
+                int srcY = (int) ((y - yStart) / (double) lineH * wallTexture.getHeight());
+                int color = wallTexture.getRGB(texX, srcY);
+
+                // Extract RGB components
+                int r = (color >> 16) & 0xFF;
+                int g = (color >> 8) & 0xFF;
+                int b = color & 0xFF;
+
+                // Apply darkness
+                r = (int) (r * (1 - darknessFactor));
+                g = (int) (g * (1 - darknessFactor));
+                b = (int) (b * (1 - darknessFactor));
+
+                // Combine back to color
+                color = (r << 16) | (g << 8) | b;
+
+                // Draw pixel
+                for (int rx = 0; rx < rayResolution; rx++) {
+                    int px = x + rx;
+                    if (px < screenWidth) {
+                        pixels[y * screenWidth + px] = color;
+                    }
+                }
+            }
+
             // Draw floor slice (nearest)
             for (int y = yEnd; y < screenHeight; y++) {
                 double floorDist = screenHeight / (2.0 * y - screenHeight);
