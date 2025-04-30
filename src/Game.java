@@ -6,9 +6,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.ArrayList;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
-import java.util.ArrayList;
 
 public class Game extends Canvas implements KeyListener, MouseMotionListener {
     private Player player;
@@ -33,6 +33,9 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
     // Timer fields
     private long timerStart;
     private boolean timerStarted = false;
+
+    // Sprint / stamina (0.0 to 1.0)
+    private double stamina = 1.0;
 
     public Game() {
         soundManager = new SoundManager();
@@ -101,7 +104,6 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
             System.exit(0);
         }
 
-        keys = new boolean[256];
         renderer = new Renderer(this, map, player);
         hud = new HUD(player, this);
         addKeyListener(this);
@@ -109,10 +111,6 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
         setFocusable(true);
 
         try { robot = new Robot(); } catch (AWTException e) { e.printStackTrace(); }
-
-        System.out.println("Initializing game with level: " + levelName);
-        System.out.println("Player spawn point: (" + player.getX() + ", " + player.getY() + ")");
-        System.out.println("Map dimensions: " + map.getWidth() + "x" + map.getHeight());
     }
 
     private boolean loadLevel() {
@@ -121,28 +119,18 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
             JOptionPane.showMessageDialog(null, "No levels found. Create a new level first.");
             return false;
         }
-
         File[] levelFiles = levelsDir.listFiles((dir, name) -> name.endsWith(".txt"));
         String[] levelNames = new String[levelFiles.length];
         for (int i = 0; i < levelFiles.length; i++) {
             levelNames[i] = levelFiles[i].getName().replace(".txt", "");
         }
-
-        String selectedLevel = (String) JOptionPane.showInputDialog(
-                null,
-                "Select a level to load:",
-                "Load Level",
-                JOptionPane.PLAIN_MESSAGE,
-                null,
-                levelNames,
-                levelNames[0]
+        String sel = (String)JOptionPane.showInputDialog(
+            null, "Select a level to load:", "Load Level",
+            JOptionPane.PLAIN_MESSAGE, null, levelNames, levelNames[0]
         );
-
-        if (selectedLevel == null) return false;
-
-        File levelFile = new File(levelsDir, selectedLevel + ".txt");
+        if (sel == null) return false;
         try {
-            List<String> lines = Files.readAllLines(levelFile.toPath());
+            List<String> lines = Files.readAllLines(new File(levelsDir, sel + ".txt").toPath());
             char[][] layout = new char[lines.size()][lines.get(0).length()];
             for (int y = 0; y < lines.size(); y++) {
                 for (int x = 0; x < lines.get(y).length(); x++) {
@@ -175,15 +163,15 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
             processInput();
             player.update(map);
 
-            char currentTile = map.getTile((int) player.getX(), (int) player.getY());
+            char currentTile = map.getTile((int)player.getX(), (int)player.getY());
             targetFOV = (currentTile == 'T') ? 120 : 60;
 
             if (currentTile == 'E') {
-                long endTime = System.nanoTime();
-                double elapsedSec = (endTime - timerStart) / 1_000_000_000.0;
-                String timeStr = String.format("%.2f", elapsedSec);
-                JOptionPane.showMessageDialog(null, "Level completed in " + timeStr + " seconds!");
-                return elapsedSec;
+                long end = System.nanoTime();
+                double elapsed = (end - timerStart) / 1_000_000_000.0;
+                JOptionPane.showMessageDialog(null,
+                    "Level completed in " + String.format("%.2f", elapsed) + " seconds!");
+                return elapsed;
             }
 
             smoothFOVTransition();
@@ -193,11 +181,9 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
             long now = System.nanoTime();
             frames++;
             if (now - lastTime >= 1_000_000_000L) {
-                fps = frames;
-                frames = 0;
-                int targetFpsLow = 50, targetFpsHigh = 58;
-                if (fps < targetFpsLow) adjustRayResolution(1);
-                else if (fps > targetFpsHigh) adjustRayResolution(-1);
+                fps = frames; frames = 0;
+                if (fps < 50) adjustRayResolution(1);
+                else if (fps > 58) adjustRayResolution(-1);
                 lastTime = now;
             }
 
@@ -210,15 +196,22 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
     }
 
     private void processInput() {
-        // Start timer on first movement
-        if (!timerStarted && (keys[KeyEvent.VK_W] || keys[KeyEvent.VK_S] ||
-                              keys[KeyEvent.VK_A] || keys[KeyEvent.VK_D])) {
+        // Start timer on first move
+        if (!timerStarted && (keys[KeyEvent.VK_W]||keys[KeyEvent.VK_S]||
+                              keys[KeyEvent.VK_A]||keys[KeyEvent.VK_D])) {
             timerStart = System.nanoTime();
             timerStarted = true;
-            System.out.println("Timer started.");
         }
 
-        player.setSpeedBoost(keys[KeyEvent.VK_SHIFT]);
+        // Sprint mechanic
+        if (keys[KeyEvent.VK_SHIFT] && stamina > 0.0) {
+            player.setSpeedBoost(true);
+            stamina = Math.max(0.0, stamina - 0.01);
+        } else {
+            player.setSpeedBoost(false);
+            stamina = Math.min(1.0, stamina + 0.005);
+        }
+
         if (keys[KeyEvent.VK_W]) player.moveForward(map);
         if (keys[KeyEvent.VK_S]) player.moveBackward(map);
         if (keys[KeyEvent.VK_A]) player.strafeLeft(map);
@@ -237,51 +230,48 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
     }
 
     private void recenterMouse() {
-        if (isMouseCentered) {
-            Point center = new Point(getWidth() / 2, getHeight() / 2);
-            SwingUtilities.convertPointToScreen(center, this);
-            robot.mouseMove(center.x, center.y);
-            lastMouseX = center.x;
-        }
+        if (!isMouseCentered) return;
+        Point center = new Point(getWidth()/2, getHeight()/2);
+        SwingUtilities.convertPointToScreen(center, this);
+        robot.mouseMove(center.x, center.y);
+        lastMouseX = center.x;
     }
 
     private void renderMiniMap(Graphics g) {
-        int miniMapSize = Math.min(getWidth(), getHeight()) / 5;
+        int miniMapSize = Math.min(getWidth(), getHeight())/5;
         int tileSize = miniMapSize / map.getWidth();
-        int offsetX = (getWidth() - miniMapSize) / 2;
-        int offsetY = getHeight() - miniMapSize - 10;
+        int offsetX = (getWidth()-miniMapSize)/2;
+        int offsetY = getHeight()-miniMapSize-10;
 
-        for (int y = 0; y < map.getHeight(); y++) {
-            for (int x = 0; x < map.getWidth(); x++) {
-                char tile = map.getTile(x, y);
-                if (map.isWall(x, y)) {
-                    // skip
-                } else if (tile == 'T') g.setColor(Color.BLUE);
-                else if (tile == 'E') g.setColor(Color.RED);
+        for (int y=0; y<map.getHeight(); y++) {
+            for (int x=0; x<map.getWidth(); x++) {
+                char t = map.getTile(x,y);
+                if (map.isWall(x,y)) continue;
+                if (t=='T') g.setColor(Color.BLUE);
+                else if (t=='E') g.setColor(Color.RED);
                 else g.setColor(Color.LIGHT_GRAY);
-                g.fillRect(offsetX + x * tileSize, offsetY + y * tileSize, tileSize, tileSize);
+                g.fillRect(offsetX+x*tileSize, offsetY+y*tileSize, tileSize, tileSize);
             }
         }
 
-        int pX = offsetX + (int)(player.getX() * tileSize);
-        int pY = offsetY + (int)(player.getY() * tileSize);
+        int pX = offsetX + (int)(player.getX()*tileSize);
+        int pY = offsetY + (int)(player.getY()*tileSize);
         g.setColor(Color.RED);
-        g.fillOval(pX - 3, pY - 3, 6, 6);
+        g.fillOval(pX-3, pY-3, 6, 6);
 
         g.setColor(Color.YELLOW);
-        for (int i = -30; i <= 30; i++) {
-            double rayAngle = player.getAngle() + Math.toRadians(i);
-            double rx = Math.cos(rayAngle), ry = Math.sin(rayAngle);
-            double dist = 0;
+        for (int i=-30; i<=30; i++) {
+            double angle = player.getAngle()+Math.toRadians(i);
+            double dx = Math.cos(angle), dy = Math.sin(angle), dist=0;
             while (true) {
-                dist += 0.1;
-                int tx = (int)(player.getX() + rx * dist);
-                int ty = (int)(player.getY() + ry * dist);
-                if (tx < 0 || tx >= map.getWidth() || ty < 0 || ty >= map.getHeight() || map.isWall(tx, ty)) {
-                    int endX = (int)(offsetX + (player.getX() + rx * dist) * tileSize);
-                    int endY = (int)(offsetY + (player.getY() + ry * dist) * tileSize);
-                    g.drawLine(pX, pY, endX, endY);
-                    Point ep = new Point(endX, endY);
+                dist+=0.1;
+                int tx=(int)(player.getX()+dx*dist);
+                int ty=(int)(player.getY()+dy*dist);
+                if (tx<0||tx>=map.getWidth()||ty<0||ty>=map.getHeight()||map.isWall(tx,ty)) {
+                    int ex=offsetX+(int)((player.getX()+dx*dist)*tileSize);
+                    int ey=offsetY+(int)((player.getY()+dy*dist)*tileSize);
+                    g.drawLine(pX,pY,ex,ey);
+                    Point ep=new Point(ex,ey);
                     if (!rayEndPoints.contains(ep)) {
                         rayEndPoints.add(ep);
                         dots++;
@@ -292,14 +282,14 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
         }
 
         g.setColor(Color.BLACK);
-        for (Point pt : rayEndPoints) {
-            g.fillOval(pt.x - 1, pt.y - 1, 2, 2);
+        for (Point pt: rayEndPoints) {
+            g.fillOval(pt.x-1, pt.y-1, 2, 2);
         }
     }
 
     public void setSpawnPoint(double x, double y) {
-        if (player == null) player = new Player(x, y, 0);
-        else player = new Player(x, y, player.getAngle());
+        if (player == null) player = new Player(x,y,0);
+        else player = new Player(x,y,player.getAngle());
     }
 
     public void setMouseCentered(boolean centered) {
@@ -307,45 +297,44 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
         if (centered) recenterMouse();
     }
 
-    public int getFOV() { return fov; }
-    public void adjustFOV(int delta) { fov = Math.max(30, Math.min(120, fov + delta)); }
-    public double getMouseSensitivity() { return mouseSensitivity; }
-    public void adjustMouseSensitivity(double delta) {
-        mouseSensitivity = Math.max(0.0001, mouseSensitivity + delta);
+    public int getFOV()               { return fov; }
+    public void adjustFOV(int d)      { fov = Math.max(30, Math.min(120, fov + d)); }
+    public double getMouseSensitivity(){ return mouseSensitivity; }
+    public void adjustMouseSensitivity(double d){
+        mouseSensitivity = Math.max(0.0001, mouseSensitivity + d);
     }
-    public int getRayResolution() { return rayResolution; }
-    public void adjustRayResolution(int delta) {
-        rayResolution = Math.max(1, rayResolution + delta);
+    public int getRayResolution()     { return rayResolution; }
+    public void adjustRayResolution(int d){
+        rayResolution = Math.max(1, rayResolution + d);
     }
     public void exitToMapSelection() {
         JOptionPane.showMessageDialog(null, "Returning to map selection...");
         System.exit(0);
     }
-    private void smoothFOVTransition() {
+    private void smoothFOVTransition(){
         if (fov < targetFOV) fov++;
         else if (fov > targetFOV) fov--;
     }
 
-    /** NEW: elapsed seconds since first move, 0 if not started */
+    /** Seconds since first movement started */
     public double getElapsedTime() {
         if (!timerStarted) return 0.0;
-        long now = System.nanoTime();
-        return (now - timerStart) / 1_000_000_000.0;
+        return (System.nanoTime() - timerStart) / 1_000_000_000.0;
     }
 
-    @Override
-    public void keyPressed(KeyEvent e) { keys[e.getKeyCode()] = true; }
-    @Override
-    public void keyReleased(KeyEvent e) { keys[e.getKeyCode()] = false; }
-    @Override public void keyTyped(KeyEvent e) {}
-    @Override
-    public void mouseMoved(MouseEvent e) {
-        if (isMouseCentered) {
-            int mouseX = e.getXOnScreen();
-            int deltaX = mouseX - lastMouseX;
-            player.rotate(deltaX * mouseSensitivity);
-            lastMouseX = mouseX;
-        }
+    /** Expose stamina to HUD */
+    public double getStamina() {
+        return stamina;
+    }
+
+    @Override public void keyPressed(KeyEvent e)  { keys[e.getKeyCode()] = true; }
+    @Override public void keyReleased(KeyEvent e) { keys[e.getKeyCode()] = false; }
+    @Override public void keyTyped(KeyEvent e)    {}
+    @Override public void mouseMoved(MouseEvent e){
+        if (!isMouseCentered) return;
+        int mx = e.getXOnScreen(), dx = mx - lastMouseX;
+        player.rotate(dx * mouseSensitivity);
+        lastMouseX = mx;
     }
     @Override public void mouseDragged(MouseEvent e) {}
     public static void main(String[] args) {
