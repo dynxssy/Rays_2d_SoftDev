@@ -43,14 +43,27 @@ public class Raycaster {
         // Load full-res textures once
         if (wallTexture == null) {
             try {
-                BufferedImage rawWall  = ImageIO.read(new File("Rays_2d_SoftDev-main/textures/brick3.jpg"));
-                BufferedImage rawFloor = ImageIO.read(new File("Rays_2d_SoftDev-main/textures/floor.jpg"));
+                File wallFile = new File("textures/brick3.jpg");
+                File floorFile = new File("textures/floor.jpg");
+                File skyFile = new File("textures/sky1.jpg");
+
+                System.out.println("Loading wall texture from: " + wallFile.getAbsolutePath());
+                System.out.println("Loading floor texture from: " + floorFile.getAbsolutePath());
+                System.out.println("Loading sky texture from: " + skyFile.getAbsolutePath());
+
+                BufferedImage rawWall  = ImageIO.read(wallFile);
+                BufferedImage rawFloor = ImageIO.read(floorFile);
                 wallTexture  = scaleTexture(rawWall, TEXTURE_SCALE);
                 floorTexture = scaleTexture(rawFloor, TEXTURE_SCALE);
-                skyTexture   = ImageIO.read(new File("Rays_2d_SoftDev-main/textures/sky1.jpg"));
+                skyTexture   = ImageIO.read(skyFile);
             } catch (IOException e) {
                 System.err.println("❌ Texture load error:");
                 e.printStackTrace();
+
+                // Set textures to null explicitly to avoid NullPointerException
+                wallTexture = null;
+                floorTexture = null;
+                skyTexture = null;
             }
         }
 
