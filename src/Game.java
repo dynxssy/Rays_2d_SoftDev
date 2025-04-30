@@ -278,14 +278,18 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
         int offsetX = (getWidth()-miniMapSize)/2;
         int offsetY = getHeight()-miniMapSize-10;
 
-        for (int y=0; y<map.getHeight(); y++) {
-            for (int x=0; x<map.getWidth(); x++) {
-                char t = map.getTile(x,y);
-                if (map.isWall(x,y)) continue;
-                if (t=='T') g.setColor(Color.BLUE);
-                else if (t=='E') g.setColor(Color.RED);
+        for (int y = 0; y < map.getHeight(); y++) {
+            for (int x = 0; x < map.getWidth(); x++) {
+                char t = map.getTile(x, y);
+                if (map.isWall(x, y)) {
+                    g.setColor(Color.LIGHT_GRAY); // Set wall color to match empty fields
+                    g.fillRect(offsetX + x * tileSize, offsetY + y * tileSize, tileSize, tileSize);
+                    continue;
+                }
+                if (t == 'T') g.setColor(Color.BLUE);
+                else if (t == 'E') g.setColor(Color.RED);
                 else g.setColor(Color.LIGHT_GRAY);
-                g.fillRect(offsetX+x*tileSize, offsetY+y*tileSize, tileSize, tileSize);
+                g.fillRect(offsetX + x * tileSize, offsetY + y * tileSize, tileSize, tileSize);
             }
         }
 
