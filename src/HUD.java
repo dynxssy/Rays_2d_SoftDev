@@ -1,3 +1,4 @@
+// HUD.java
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -21,24 +22,33 @@ public class HUD implements KeyListener, MouseListener {
 
     public void render(Graphics g, int fps) {
         if (isMenuOpen) {
-            if (isOptionsMenuOpen) renderOptionsMenu(g);
-            else renderMenu(g);
+            if (isOptionsMenuOpen) {
+                renderOptionsMenu(g);
+            } else {
+                renderMenu(g);
+            }
         } else {
+            // Draw HUD info
             g.setColor(Color.BLACK);
             g.setFont(new Font("Arial", Font.PLAIN, 20));
 
-            // Player info
             g.drawString("Position: (" + player.getX() + ", " + player.getY() + ")", 10, 20);
             g.drawString("Dots rendered [minimap Lidar]: " + game.dots, 10, 40);
 
-            // FPS
-            renderFPS(g, fps);  // at y=60
+            renderFPS(g, fps);  // draws FPS at y=60
 
-            // *** NEW: elapsed time display ***
             g.drawString(
                 "Time: " + String.format("%.2f", game.getElapsedTime()) + "s",
                 10, 80
             );
+
+            // --- NEW: Crosshair in the center ---
+            int cx = game.getWidth()  / 2;
+            int cy = game.getHeight() / 2;
+            int len = 8;  // length of each arm
+            g.setColor(Color.RED);
+            g.drawLine(cx - len, cy, cx + len, cy);
+            g.drawLine(cx, cy - len, cx, cy + len);
         }
     }
 
@@ -108,7 +118,6 @@ public class HUD implements KeyListener, MouseListener {
     // Unused listener methods
     @Override public void keyReleased(KeyEvent e) {}
     @Override public void keyTyped(KeyEvent e) {}
-
     @Override public void mousePressed(MouseEvent e) {}
     @Override public void mouseReleased(MouseEvent e) {}
     @Override public void mouseEntered(MouseEvent e) {}
