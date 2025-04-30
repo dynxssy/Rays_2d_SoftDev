@@ -26,7 +26,7 @@ public class MapEditor extends JFrame {
 
         // Brush chooser dropdown (added Win Point)
         JComboBox<String> brushChooser = new JComboBox<>(new String[]{
-                "Wall", "Spawn Point", "FOV Trap", "Endgame Trap", "Win Point", "Void Trap", "Erase"
+                "Wall", "Spawn Point", "FOV Trap", "Endgame Trap", "Void Trap", "Erase"
         });
         brushChooser.addActionListener(e -> selectedBrush = (String) brushChooser.getSelectedItem());
         buttonPanel.add(new JLabel("Brush:"));
@@ -179,9 +179,6 @@ public class MapEditor extends JFrame {
                 case "Endgame Trap":
                     paintTile(x, y, 'E');
                     break;
-                case "Win Point":
-                    paintTile(x, y, 'W');
-                    break;
                 case "Void Trap":
                     paintTile(x, y, 'V');
                     break;
@@ -210,7 +207,7 @@ public class MapEditor extends JFrame {
                         case 'T': g.setColor(Color.BLUE); break;
                         case 'V': g.setColor(Color.BLACK); break;
                         case 'E': g.setColor(Color.RED); break;
-                        case 'W': g.setColor(Color.YELLOW); break; // Win Point
+                    
                         default:  g.setColor(Color.LIGHT_GRAY); break;
                     }
                     g.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);

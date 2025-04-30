@@ -36,7 +36,7 @@ public class HUD implements KeyListener, MouseListener {
             g.drawRect(bx, by, barW, barH);
 
             // ● Position & dots
-            g.setColor(Color.BLACK);
+            g.setColor(Color.WHITE);
             g.setFont(new Font("Arial", Font.PLAIN, 20));
             g.drawString("Position: (" + player.getX() + ", " + player.getY() + ")", 10, 30);
             g.drawString("Dots [minimap Lidar]: " + game.dots, 10, 50);

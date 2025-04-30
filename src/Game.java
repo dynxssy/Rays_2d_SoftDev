@@ -179,14 +179,6 @@ public class Game extends Canvas implements KeyListener, MouseMotionListener {
                 continue; // Continue game loop from beginning
             }
 
-// Win‐point handling
-            if (currentTile == 'W') {
-                long endTime = System.nanoTime();
-                double elapsedSec = (endTime - timerStart) / 1_000_000_000.0;
-                String timeStr = String.format("%.2f", elapsedSec);
-                JOptionPane.showMessageDialog(null, "You win! Completed in " + timeStr + " seconds.");
-                return elapsedSec;
-            }
 
 // endgame  tile
             if (currentTile == 'E') {
