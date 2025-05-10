@@ -6,6 +6,33 @@ public class Main {
     private static final int HEIGHT = 600;
 
     public static void main(String[] args) {
+        while (true) {
+            String[] options = {"Start New Game", "Settings", "Exit"};
+            int choice = JOptionPane.showOptionDialog(
+                null,
+                "Main Menu",
+                "Java Raycaster Game",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                options,
+                options[0]
+            );
+
+            if (choice == 0) {
+                // Start new game
+                runGame();
+            } else if (choice == 1) {
+                // Settings
+                showSettings();
+            } else if (choice == 2 || choice == JOptionPane.CLOSED_OPTION) {
+                // Exit
+                System.exit(0);
+            }
+        }
+    }
+
+    private static void runGame() {
         JFrame frame = new JFrame("Java Raycaster Game");
         TextureLoader.loadTextures();
 
@@ -62,6 +89,10 @@ public class Main {
         // Display the winner
         String winner = player1Time < player2Time ? "Player 1" : "Player 2";
         JOptionPane.showMessageDialog(null, "Game Over!\nPlayer 1 Time: " + player1Time + " seconds\nPlayer 2 Time: " + player2Time + " seconds\nWinner: " + winner);
-        System.exit(0);
+        frame.dispose(); // Close the game window
+    }
+
+    private static void showSettings() {
+        JOptionPane.showMessageDialog(null, "Settings Menu\n(Back to Main Menu)");
     }
 }
